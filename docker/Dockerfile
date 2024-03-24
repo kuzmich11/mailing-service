@@ -34,23 +34,23 @@ RUN apk update \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
 
 # Install PHP extensions
-# RUN docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/
-# RUN docker-php-ext-install -j$(getconf _NPROCESSORS_ONLN) \
-#     intl \
-#     gd \
-#     bcmath \
-#     pdo_pgsql \
-#     sockets \
-#     zip
-# RUN pecl channel-update pecl.php.net \
-#     && pecl install -o -f \
-#         redis \
-#         event \
-#         memcached \
-#     && rm -rf /tmp/pear \
-#     && echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini \
-#     && echo "extension=event.so" > /usr/local/etc/php/conf.d/event.ini \
-#     && echo "extension=memcached.so" > /usr/local/etc/php/conf.d/memcached.ini
+RUN docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/
+RUN docker-php-ext-install -j$(getconf _NPROCESSORS_ONLN) \
+    intl \
+    gd \
+    bcmath \
+    pdo_pgsql \
+    sockets \
+    zip
+#RUN pecl channel-update pecl.php.net \
+#    && pecl install -o -f \
+#        redis \
+#        event \
+#        memcached \
+#    && rm -rf /tmp/pear \
+#    && echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini \
+#    && echo "extension=event.so" > /usr/local/etc/php/conf.d/event.ini \
+#    && echo "extension=memcached.so" > /usr/local/etc/php/conf.d/memcached.ini
 
 RUN pecl install xdebug \
 && docker-php-ext-enable xdebug
