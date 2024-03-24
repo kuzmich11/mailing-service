@@ -10,6 +10,7 @@ services:
       - '9000:9000'
     volumes:
       - ./:/var/www
+      - ./mnt:/mnt
     working_dir: /var/www
 
   nginx-mailing:
@@ -24,14 +25,14 @@ services:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
 
   postgres-mailing:
-    image: postgres:15
+    image: postgres:16
     ports:
       - '35432:5432'
     container_name: 'postgres-mailing'
     working_dir: /app
     restart: always
     environment:
-      POSTGRES_DB: 'otus'
+      POSTGRES_DB: 'mailing'
       POSTGRES_USER: 'user'
       POSTGRES_PASSWORD: 'password'
     volumes:
