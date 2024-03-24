@@ -20,7 +20,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(name: 'idx__template_parent_id',   columns: ['parent_id'])]
 #[ORM\Index(name: 'idx__template_creator',     columns: ['creator'])]
 #[ORM\Index(name: 'idx__template_created_at',  columns: ['created_at'])]
-#[ORM\Index(name: 'idx__template_task_number', columns: ['task_number'])]
 #[ORM\Index(name: 'idx__template_editor',      columns: ['editor'])]
 #[ORM\Index(name: 'idx__template_edited_at',   columns: ['edited_at'])]
 #[ORM\Index(name: 'idx__template_deleter',     columns: ['deleter'])]

@@ -11,7 +11,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: SmtpAccountRepository::class)]
 #[ORM\Table(name: 'smtp_account', schema: 'mail', options: ['comment' => 'Параметры SMTP-аккаунтов'])]
 #[ORM\Index(name: 'idx__smtp_account_system',  columns: ['is_system'])]
-#[ORM\Index(name: 'idx__smtp_account_encrypt', columns: ['is_encrypt'])]
 #[ORM\Index(name: 'idx__smtp_account_deleted', columns: ['is_deleted'])]
 #[ORM\Index(name: 'idx__smtp_account_active',  columns: ['is_active'])]
 class SmtpAccount
