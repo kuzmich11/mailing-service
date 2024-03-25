@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Exception\JsonRpcException;
 use Exception;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionUnionType;
 use RuntimeException;
@@ -63,7 +64,9 @@ abstract class JsonRpcController extends AbstractController
                 return new JsonResponse('', 200, $this->headers->get());
             }
             return new JsonResponse(
-                $this->responseError(new Exception('Invalid request JSON', Exception::PARSE_ERROR)),
+                $this->responseError(new JsonRpcException(
+                    'Invalid request JSON',
+                    JsonRpcException::PARSE_ERROR)),
                 400,
                 $this->headers->get()
             );
@@ -85,8 +88,8 @@ abstract class JsonRpcController extends AbstractController
                 $results[] = array_merge($response, ['result' => $result]);
             } catch (Throwable $e) {
                 $results[] = array_merge($response, $this->responseError(
-                    $e instanceof Exception ?
-                        $e : new Exception('Internal error', Exception::INTERNAL_ERROR, $e)
+                    $e instanceof JsonRpcException ?
+                        $e : new JsonRpcException('Internal error', JsonRpcException::INTERNAL_ERROR, $e)
                 ));
             }
         }
@@ -138,7 +141,8 @@ abstract class JsonRpcController extends AbstractController
     /**
      * Обработка запроса
      *
-     * @throws Exception
+     * @param bool|string|array|null $data
+     * @throws JsonRpcException
      */
     private function resolveRequest(bool|string|null|array $data): void
     {
@@ -158,8 +162,8 @@ abstract class JsonRpcController extends AbstractController
      *
      * @return array Список аргументов в порядке следования в сигнатуре метода.
      *
-     * @throws \ReflectionException
-     * @throws Exception
+     * @throws ReflectionException
+     * @throws JsonRpcException
      */
     protected function resolveArguments(): array
     {
@@ -204,7 +208,9 @@ abstract class JsonRpcController extends AbstractController
                     try {
                         $args[] = new $paramClass((array)$params[$param->name]);
                     } catch (TypeError $e) {
-                        throw new Exception('Invalid request params', Exception::INVALID_PARAMS, $e);
+                        throw new JsonRpcException(
+                            'Invalid request params',
+                            JsonRpcException::INVALID_PARAMS, $e);
                     }
                 } else {
                     $args[] = $params[$param->getName()];
@@ -226,7 +232,7 @@ abstract class JsonRpcController extends AbstractController
      *
      * @return void
      *
-     * @throws Exception
+     * @throws JsonRpcException
      */
     private function checkRequest(mixed $data): void
     {
@@ -246,11 +252,11 @@ abstract class JsonRpcController extends AbstractController
     /**
      * Получение отладочной информации
      *
-     * @param Exception $e Исключение вызвавшее ошибку
+     * @param JsonRpcException $e Исключение вызвавшее ошибку
      *
      * @return array
      */
-    private function getDebugData(\Exception $e): array
+    private function getDebugData(Exception $e): array
     {
         if ($this->getParameter('kernel.environment') !== 'dev') {
             return [];
@@ -280,11 +286,11 @@ abstract class JsonRpcController extends AbstractController
     /**
      * Формирование ошибочного ответа
      *
-     * @param \Throwable|\Exception $e Исключение с данными по ошибке
+     * @param Throwable|Exception $e Исключение с данными по ошибке
      *
      * @return array
      */
-    private function responseError(Throwable|\Exception $e): array
+    private function responseError(Throwable|Exception $e): array
     {
         $error = [
             'code' => $e->getCode(),
