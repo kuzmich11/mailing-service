@@ -25,27 +25,28 @@ class TemplateService
     /**
      * Конструктор с DI
      *
-     * @param TemplateRepository        $templates       Репозиторий БД для Email шаблонов
-     * @param TemplateHistoryRepository $histories       Репозиторий БД для изменений Email шаблонов
-     * @param EntityValidatorService    $entityValidator Сервис валидатора объектов сущностей БД
-     * @param EntityManagerInterface    $doctrine        Менеджер сущностей БД
-     * @param TwigEnvironment           $twig            Twig-шаблонизатор
-     * @param LoggerInterface           $logger          Логгер
+     * @param TemplateRepository $templates Репозиторий БД для Email шаблонов
+     * @param TemplateHistoryRepository $histories Репозиторий БД для изменений Email шаблонов
+     * @param EntityValidatorService $validator Сервис валидатора объектов сущностей БД
+     * @param EntityManagerInterface $doctrine Менеджер сущностей БД
+     * @param TwigEnvironment $twig Twig-шаблонизатор
+     * @param LoggerInterface $logger Логгер
      */
     public function __construct(
         private readonly TemplateRepository        $templates,
         private readonly TemplateHistoryRepository $histories,
-        private readonly EntityValidatorService    $entityValidator,
+        private readonly EntityValidatorService    $validator,
         private readonly EntityManagerInterface    $doctrine,
         private readonly TwigEnvironment           $twig,
         private readonly LoggerInterface           $logger
     )
-    {}
+    {
+    }
 
     /**
      * Сохранить данные Email шаблона
      *
-     * @param EntityDTO $tplData  Данные шаблона
+     * @param EntityDTO $tplData Данные шаблона
      * @param Uuid|null $userUuid UUID пользователя
      *
      * @return int
@@ -65,8 +66,7 @@ class TemplateService
             $this->fillingByDTO($template, $tplData);
             $template->setCreator($userUuid);
             $template->setCreatedAt(new \DateTimeImmutable());
-        }
-        else {
+        } else {
             if ($tplChanges = $this->fillingByDTO($template, $tplData)) {
                 $template->setEditor($userUuid);
                 $template->setEditedAt(new \DateTimeImmutable());
@@ -74,7 +74,7 @@ class TemplateService
                 $tplChanges->setEditedAt($template->getEditedAt());
             }
         }
-        $valid = $this->entityValidator->validate($template);
+        $valid = $this->validator->validate($template);
         if (!$valid) {
             throw new TemplateException(
                 implode("\n", $valid),
@@ -87,7 +87,7 @@ class TemplateService
             $this->doctrine->flush();
             if (isset($tplChanges)) {
                 $tplChanges->setTemplate($template);
-                $valid = $this->entityValidator->validate($tplChanges);
+                $valid = $this->validator->validate($tplChanges);
                 if (!$valid) {
                     throw new TemplateException(
                         implode("\n", $valid),
@@ -98,8 +98,7 @@ class TemplateService
                 $this->doctrine->persist($tplChanges);
                 $this->doctrine->flush();
             }
-        }
-        catch (\Exception $error) {
+        } catch (\Exception $error) {
             $this->logger->error($error->getMessage(), ['Exception' => $error]);
             throw new TemplateException(
                 'Ошибка БД при сохранении изменений шаблона',
@@ -114,8 +113,8 @@ class TemplateService
     /**
      * Заполнить объект шаблона данными из DTO
      *
-     * @param Template  $template Заполняемый шаблон
-     * @param EntityDTO $tplData  DTO с данными
+     * @param Template $template Заполняемый шаблон
+     * @param EntityDTO $tplData DTO с данными
      *
      * @return TemplateHistory|null Объект для сохранения изменений шаблона
      * @throws TemplateException
@@ -254,69 +253,18 @@ class TemplateService
     /**
      * Получить коллекцию шаблонов
      *
-     * @param ListDTO  $params Параметры выборки шаблонов
-     * @param int|null $count  Полное количество записей для выборки (OUT)
+     * @param ListDTO $params Параметры выборки шаблонов
+     * @param int|null $count Полное количество записей для выборки (OUT)
      *
      * @return Template[]
      */
     public function getTemplates(ListDTO $params, ?int &$count = null): array
     {
-        $qb = $this->templates->createQueryBuilder('t');
-        // подготовка запроса
-        if ($filters = $params->filter) {
-            if (null !== $filters->parent) {
-                $qb->andWhere($filters->parent
-                    ? $qb->expr()->eq('t.parent', $filters->parent)
-                    : $qb->expr()->isNull('t.parent')
-                );
-            }
-            if ($filters->title) {
-                $qb->andWhere($qb->expr()->like('t.title', ':title'))
-                    ->setParameter('title', "%{$filters->title}%");
-            }
-            if ($filters->creator) {
-                $qb->andWhere($qb->expr()->eq('t.creator', ':uuid'))
-                    ->setParameter('uuid', $filters->creator, UuidType::NAME);
-            }
-            if ($filters->taskNumber) {
-                $qb->andWhere($qb->expr()->eq('t.task_number', ':task'))
-                    ->setParameter('task', $filters->taskNumber);
-            }
-            if ($filters->created?->from) {
-                $qb->andWhere($qb->expr()->gte('t.created_at', ':from'))
-                    ->setParameter('from', $filters->created->from->format('Y-m-d 00:00:00'));
-            }
-            if ($filters->created?->to) {
-                $qb->andWhere($qb->expr()->lte('t.created_at', ':to'))
-                    ->setParameter('to', $filters->created->to->format('Y-m-d 23:59:59'));
-            }
-        }
-        if (!$filters?->withDeleted) {
-            $qb->andWhere($qb->expr()->isNull('t.deleter'));
-            $qb->andWhere($qb->expr()->isNull('t.deleted_at'));
-        }
-        // сортировка и ограничение выборки
-        $qb->orderBy("t.{$params->sort->field}", $params->sort->reverse ? 'DESC' : 'ASC');
-        $qb->setMaxResults($params->limit);
-        if ($params->page > 1) {
-            $qb->setFirstResult(($params->page - 1) * $params->limit);
-        }
+        $qb = $this->templates->getQueryBuilder($params);
+
         // получение данных
         $result = (array)$qb->getQuery()->getResult();
-        if (null !== $count) {
-            try {
-                $count = (int)$qb->select('COUNT(t.id)')
-                    ->resetDQLPart('orderBy')
-                    ->setMaxResults(1)
-                    ->setFirstResult(null)
-                    ->getQuery()
-                    ->getSingleScalarResult();
-            }
-            catch (UnexpectedResultException $error) {
-                $this->logger->error($error->getMessage(), ['exception' => $error]);
-                $count = 0;
-            }
-        }
+        $count = $this->templates->getCountRequested($qb);
 
         return $result;
     }
@@ -324,8 +272,8 @@ class TemplateService
     /**
      * Рендеринг темы и контента Email шаблона со всеми родителями
      *
-     * @param Template $template  Шаблон для рендеринга
-     * @param array    $variables Значения подставляемых переменных
+     * @param Template $template Шаблон для рендеринга
+     * @param array $variables Значения подставляемых переменных
      *
      * @return Template Шаблон с обработанными темой и контентом
      */
@@ -344,16 +292,14 @@ class TemplateService
             }
             $content = $this->getTwigRenderedData($content, $workVariables);
             $subject = $this->getTwigRenderedData($subject, $workVariables);
-        }
-        catch (\Throwable $error) {
+        } catch (\Throwable $error) {
             $this->logger->warning($error->getMessage(), ['Exception' => $error]);
-        }
-        finally {
+        } finally {
             $workTemplate->setContent($content);
             $workTemplate->setSubject($subject);
         }
 
-        $workVariables = array_merge($workVariables, [ 'content' => $workTemplate->getContent() ]);
+        $workVariables = array_merge($workVariables, ['content' => $workTemplate->getContent()]);
         $parent = $workTemplate->getParent();
         if (!empty($parent)) {
             $parent = $this->render($parent, $workVariables);
@@ -367,7 +313,7 @@ class TemplateService
      * Рендеринг шаблонного текста по переданным значениям
      *
      * @param string $tplContent Содержимое для twig-шаблона
-     * @param array $values      Значения для обработки
+     * @param array $values Значения для обработки
      *
      * @return string
      * @throws \Twig\Error\Error
@@ -383,7 +329,7 @@ class TemplateService
     /**
      * Сохранить в БД отметку об удалении шаблона с указанным ID
      *
-     * @param int       $id       Идентификатор шаблона
+     * @param int $id Идентификатор шаблона
      * @param Uuid|null $userUuid UUID пользователя
      *
      * @return int
@@ -411,7 +357,7 @@ class TemplateService
      * Получить данные истории изменений шаблонов
      *
      * @param HistoryDTO $params Параметры выборки
-     * @param int|null   $count  Полное количество записей для выборки (OUT)
+     * @param int|null $count Полное количество записей для выборки (OUT)
      *
      * @return array
      */
@@ -422,52 +368,13 @@ class TemplateService
             if (null !== $count && $result) {
                 $count = 1;
             }
-            return [ $result->toArray() ];
+            return [$result->toArray()];
         }
 
-        $qb = $this->histories->createQueryBuilder('h');
-        $expr = $qb->expr();
-        if (null !== $params->template) {
-            $qb->andWhere($expr->eq('h.template', ':template'))
-                ->setParameter('template', $params->template);
-        }
-        if (null !== $params->editor) {
-            $qb->andWhere($expr->eq('h.editor', ':editor'))
-                ->setParameter('editor', $params->editor, UuidType::NAME);
-        }
-        if (null !== $params->period?->from) {
-            $qb->andWhere($expr->gte('h.edited_at', ':from'))
-                ->setParameter(':from', $params->period->from->format('Y-m-d 00:00:00'));
-        }
-        if (null !== $params->period?->to) {
-            $qb->andWhere($expr->lte('h.edited_at', ':to'))
-                ->setParameter(':to', $params->period->to->format('Y-m-d 23:59:59'));
-        }
-
-        $qb->orderBy('h.edited_at', $params->reverse ? 'DESC' : 'ASC');
-
-        if ($params->limit > 0) {
-            $qb->setMaxResults($params->limit);
-            if ($params->page > 1) {
-                $qb->setFirstResult(($params->page - 1) * $params->limit);
-            }
-        }
+        $qb = $this->histories->getQueryBuilder($params);
 
         $result = (array)$qb->getQuery()->getResult();
-        if (null !== $count) {
-            try {
-                $count = (int)$qb->select('COUNT(h.id)')
-                    ->resetDQLPart('orderBy')
-                    ->setMaxResults(1)
-                    ->setFirstResult(null)
-                    ->getQuery()
-                    ->getSingleScalarResult();
-            }
-            catch (UnexpectedResultException $error) {
-                $this->logger->error($error->getMessage(), ['exception' => $error]);
-                $count = 0;
-            }
-        }
+        $count = $this->histories->getCountRequested($qb);
 
         return array_map(static fn(TemplateHistory $history) => $history->toArray(), $result);
     }

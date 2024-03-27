@@ -26,9 +26,6 @@ class FilterDTO extends DataTransferObject
     /** @var PeriodDTO|null Интервал дат создания записи */
     public ?PeriodDTO $created = null;
 
-    /** @var int|null № задачи для шаблона */
-    public ?int $taskNumber = null;
-
     /** @var bool|null Флаг выборки удалённых шаблонов */
     public ?bool $withDeleted = false;
 }

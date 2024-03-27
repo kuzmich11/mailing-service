@@ -2,9 +2,12 @@
 
 namespace App\Repository;
 
+use App\DTO\Template\HistoryDTO;
 use App\Entity\TemplateHistory;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 
 /**
  * Репозиторий сущностей БД для истории изменений Email шаблонов
@@ -68,5 +71,47 @@ class TemplateHistoryRepository extends ServiceEntityRepository
             natcasesort($filters['template']);
         }
         return $filters;
+    }
+
+    public function getQueryBuilder(HistoryDTO $params): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('h');
+        $expr = $qb->expr();
+        if (null !== $params->template) {
+            $qb->andWhere($expr->eq('h.template', ':template'))
+                ->setParameter('template', $params->template);
+        }
+        if (null !== $params->editor) {
+            $qb->andWhere($expr->eq('h.editor', ':editor'))
+                ->setParameter('editor', $params->editor, UuidType::NAME);
+        }
+        if (null !== $params->period?->from) {
+            $qb->andWhere($expr->gte('h.editedAt', ':from'))
+                ->setParameter(':from', $params->period->from->format('Y-m-d 00:00:00'));
+        }
+        if (null !== $params->period?->to) {
+            $qb->andWhere($expr->lte('h.editedAt', ':to'))
+                ->setParameter(':to', $params->period->to->format('Y-m-d 23:59:59'));
+        }
+
+        $qb->orderBy('h.editedAt', $params->reverse ? 'DESC' : 'ASC');
+
+        if ($params->limit > 0) {
+            $qb->setMaxResults($params->limit);
+            if ($params->page > 1) {
+                $qb->setFirstResult(($params->page - 1) * $params->limit);
+            }
+        }
+        return $qb;
+    }
+
+    public function getCountRequested(QueryBuilder $qb): int
+    {
+        return (int)$qb->select('COUNT(h.id)')
+            ->resetDQLPart('orderBy')
+            ->setMaxResults(1)
+            ->setFirstResult(null)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

@@ -8,7 +8,7 @@ use Spatie\DataTransferObject\Exceptions\UnknownProperties;
 /**
  * DTO структура для выборки писем
  */
-class GeneralListDTO extends DataTransferObject
+class BaselListDTO extends DataTransferObject
 {
     /** @var int Дефолтный лимит выборки */
     private const DEFAULT_LIMIT = 10;
