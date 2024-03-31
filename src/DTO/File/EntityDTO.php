@@ -7,7 +7,7 @@ use Spatie\DataTransferObject\DataTransferObject;
 /**
  * DTO параметров загружаемого файла
  */
-class ParamsDTO extends DataTransferObject
+class EntityDTO extends DataTransferObject
 {
     /** @var string Наименование */
     public string $filename;

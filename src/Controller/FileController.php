@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\DTO\File\ParamsDTO;
+use App\DTO\File\EntityDTO;
 use App\Exception\FileException;
 use App\Service\FileService;
 use Psr\Log\LoggerInterface;
@@ -46,12 +46,12 @@ class FileController extends JsonRpcController
     /**
      * Загрузить файл
      *
-     * @param ParamsDTO $params DTO параметров файлов
+     * @param EntityDTO $params DTO параметров файлов
      *
-     * @return int|null
+     * @return int
      * @throws FileException
      */
-    public function upload(ParamsDTO $params): int
+    public function upload(EntityDTO $params): int
     {
         return $this->service->upload($params);
     }
