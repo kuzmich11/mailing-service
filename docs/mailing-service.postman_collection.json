@@ -1,0 +1,376 @@
+{
+	"info": {
+		"_postman_id": "7cb5adad-0687-4429-8fcf-aa406c7aa2b6",
+		"name": "mailing-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "19487918",
+		"_collection_link": "https://universal-trinity-940815.postman.co/workspace/217df946-abef-4d21-b519-e39bbaaf613d/collection/19487918-7cb5adad-0687-4429-8fcf-aa406c7aa2b6?action=share&source=collection_link&creator=19487918"
+	},
+	"item": [
+		{
+			"name": "Template",
+			"item": [
+				{
+					"name": "save",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"save\",\n    \"params\": {\n        \"title\": \"Test\",\n        \"content\": \"<div>{{Test}}</div>\",\n        \"subject\": \"Test\",\n        \"variables\": {\"Test\": \"\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "rendering",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"rendering\",\n    \"params\": {\n        \"id\":10,\n        \"values\": {\"Test\": \"Hello\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "entity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"entity\",\n    \"params\": {\n        \"id\": 1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"delete\",\n    \"params\": {\n        \"id\": 1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "filters",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"filters\",\n    \"params\": {\n        \"type\": \"HISTORY\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "list",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"list\",\n    \"params\": {\n        \"page\": 1,\n        \"limit\": 10,\n        \"filter\": {\n            \"title\": \"Test\",\n            \"creator\": \"3c8a1e70-1e46-4ae2-a669-cab04f6a699e\",\n            \"created\": {\n                \"from\":\"01.03.2024\",\n                \"to\":\"01.06.2024\"\n            },\n            \"withDeleted\":false\n        },\n        \"sort\": {\n            \"field\":\"id\",\n            \"reverse\":false\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "history",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"history\",\n    \"params\": {\n        \"page\": 1,\n        \"limit\": 10,\n        \"id\":1,\n        \"template\": 1,\n        \"period\": {\n            \"from\": \"01.03.2024\",\n            \"to\": \"01.06.2024\"\n        },\n        \"editor\": \"3c8a1e70-1e46-4ae2-a669-cab04f6a699e\",\n        \"reverse\": true\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/template{{debug}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Letter",
+			"item": [
+				{
+					"name": "save",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"save\",\n    \"params\": {\n        \"form\": \"SYSTEM\",\n        \"template\": 10,\n        \"smtp\": [1],\n        \"recipient\": 1,\n        \"subject\": \"Test\",\n        \"values\": {\"Test\": \"Hello\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/letter?{{debug}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"letter"
+							],
+							"query": [
+								{
+									"key": "{{debug}}",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Smtp",
+			"item": [
+				{
+					"name": "save",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"save\",\n    \"params\": {\n        \"title\": \"Test\",\n        \"content\": \"<div>{{Test}}</div>\",\n        \"subject\": \"Test\",\n        \"variables\": {\"Test\": \"\"}\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/smtp{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "list",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"list\",\n    \"params\": {\n        \"page\": 1,\n        \"limit\": 10,\n        \"filter\": {\n            \"title\": \"Test\",\n            \"creator\": \"3c8a1e70-1e46-4ae2-a669-cab04f6a699e\",\n            \"created\": {\n                \"from\":\"01.03.2024\",\n                \"to\":\"01.06.2024\"\n            },\n            \"withDeleted\":false\n        },\n        \"sort\": {\n            \"field\":\"id\",\n            \"reverse\":false\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/smtp{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "filters",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"filters\",\n    \"params\": {\n        \"type\": \"HISTORY\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/smtp{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"delete\",\n    \"params\": {\n        \"id\": 1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/smtp{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "entity",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"entity\",\n    \"params\": {\n        \"id\": 1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/smtp{{debug}}"
+					},
+					"response": []
+				},
+				{
+					"name": "history",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "3c8a1e70-1e46-4ae2-a669-cab04f6a699e",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 1,\n    \"method\": \"history\",\n    \"params\": {\n        \"page\": 1,\n        \"limit\": 10,\n        \"id\":1,\n        \"template\": 1,\n        \"period\": {\n            \"from\": \"01.03.2024\",\n            \"to\": \"01.06.2024\"\n        },\n        \"editor\": \"3c8a1e70-1e46-4ae2-a669-cab04f6a699e\",\n        \"reverse\": true\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{host}}/smtp{{debug}}"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
