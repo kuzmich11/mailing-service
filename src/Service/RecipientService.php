@@ -4,7 +4,7 @@ namespace App\Service;
 
 use App\DTO\Recipient\HistoryDTO;
 use App\DTO\Recipient\ListDTO;
-use App\DTO\Recipient\ParamsDTO;
+use App\DTO\Recipient\EntityDTO;
 use App\Entity\Recipient;
 use App\Exception\DomainException;
 use App\Entity\RecipientHistory;
@@ -27,24 +27,24 @@ class RecipientService
     /**
      * Конструктор
      *
-     * @param LoggerInterface            $logger              Репозиторий получателей
-     * @param EntityManagerInterface     $doctrine            Интерфейс для работы с БД
-     * @param RecipientRepository        $recipientRepository Репозиторий получателей
-     * @param RecipientHistoryRepository $historyRepository   Репозиторий истории изменений получателей
-     * @param GroupRepository            $groupsRepository    Репозиторий групп
-     * @param DomainRepository           $domainRepository    Репозиторий доменов
-     * @param DomainService              $domainService       Сервис работы с доменами
-     * @param EntityValidatorService     $entityValidator     Сервис валидации сущностей БД
+     * @param LoggerInterface            $logger        Репозиторий получателей
+     * @param EntityManagerInterface     $doctrine      Интерфейс для работы с БД
+     * @param RecipientRepository        $recipients    Репозиторий получателей
+     * @param RecipientHistoryRepository $histories     Репозиторий истории изменений получателей
+     * @param GroupRepository            $groups        Репозиторий групп
+     * @param DomainRepository           $domains       Репозиторий доменов
+     * @param DomainService              $domainService Сервис работы с доменами
+     * @param EntityValidatorService     $validator     Сервис валидации сущностей БД
      */
     public function __construct(
         private readonly LoggerInterface            $logger,
         private readonly EntityManagerInterface     $doctrine,
-        private readonly RecipientRepository        $recipientRepository,
-        private readonly RecipientHistoryRepository $historyRepository,
-        private readonly GroupRepository            $groupsRepository,
-        private readonly DomainRepository           $domainRepository,
+        private readonly RecipientRepository        $recipients,
+        private readonly RecipientHistoryRepository $histories,
+        private readonly GroupRepository            $groups,
+        private readonly DomainRepository           $domains,
         private readonly DomainService              $domainService,
-        private readonly EntityValidatorService     $entityValidator
+        private readonly EntityValidatorService     $validator
     )
     {
     }
@@ -52,20 +52,22 @@ class RecipientService
     /**
      * Изменить данные о получателе
      *
-     * @param ParamsDTO $params DTO параметров получателей
+     * @param EntityDTO $params DTO параметров получателей
      * @param Uuid $userUuid UUID сотрудника изменяющего запись
      *
      * @return int|null
      * @throws RecipientException
      * @throws UnknownProperties|DomainException
      */
-    public function save(ParamsDTO $params, Uuid $userUuid): ?int
+    public function save(EntityDTO $params, Uuid $userUuid): ?int
     {
-        $recipient = $params->id ? $this->recipientRepository->find($params->id) : new Recipient();
+        if ($this->recipients->findOneBy(['email' => $params->email])) {
+            throw new RecipientException("Получатель с email: $params->email уже существует", RecipientException::DUPLICATE);
+        }
+
+        $recipient = $params->id ? $this->recipients->find($params->id) : new Recipient();
         if (!$recipient) {
-            throw new RecipientException(
-                "Попытка изменить несуществующего получателя c ID: $params->id",
-                RecipientException::NOT_EXISTS);
+            throw new RecipientException('Отсутствует получатель c ID: ' . $params->id, RecipientException::NOT_EXISTS);
         }
 
         $changes = [];
@@ -76,9 +78,9 @@ class RecipientService
                 'new' => $params->email
             ];
             $domainName = substr($value, strpos($value, '@') + 1);
-            $domain = $this->domainRepository->findOneBy(['name' => $domainName]);
+            $domain = $this->domains->findOneBy(['name' => $domainName]);
             if (null === $domain) {
-                $paramsDomain = new \App\DTO\Domain\ParamsDTO(name: $domainName, isWorks: true);
+                $paramsDomain = new \App\DTO\Domain\EntityDTO(name: $domainName, isWorks: true);
                 $domain = $this->domainService->save($paramsDomain, $userUuid);
             }
             $recipient->setDomain($domain);
@@ -100,8 +102,8 @@ class RecipientService
             ];
             $recipient->setConsent($value);
         }
-        if ($params->groupIds) {
-            $groups = $this->groupsRepository->findByIds($params->groupIds);
+        if ($params->groups) {
+            $groups = $this->groups->findByIds($params->groups);
             if (!$groups) {
                 throw new RecipientException(
                     "Заданные группы не найдены",
@@ -111,7 +113,7 @@ class RecipientService
             array_walk($groups, fn($group) => $recipient->addGroup($group));
             if ($params->id) {
                 $changes['addGroups'] = [
-                    'groupIds' => $params->groupIds
+                    'groupIds' => $params->groups
                 ];
             }
         }
@@ -119,11 +121,11 @@ class RecipientService
             $recipient->setCreator($userUuid);
             $recipient->setCreatedAt(new \DateTimeImmutable('now'));
         } else {
-            $recipient->setUpdater($userUuid);
-            $recipient->setUpdatedAt(new \DateTimeImmutable('now'));
+            $recipient->setEditor($userUuid);
+            $recipient->setEditedAt(new \DateTimeImmutable('now'));
         }
 
-        $validateResult = $this->entityValidator->validate($recipient);
+        $validateResult = $this->validator->validate($recipient);
         if (is_array($validateResult)) {
             throw new RecipientException(
                 implode("\n", $validateResult),
@@ -162,7 +164,7 @@ class RecipientService
      */
     public function delete(int $id, Uuid $userUuid): ?int
     {
-        $recipient = $this->recipientRepository->find($id);
+        $recipient = $this->recipients->find($id);
         if (!$recipient) {
             throw new RecipientException(
                 "Попытка удалить несуществующего получателя c ID: $id",
@@ -191,7 +193,7 @@ class RecipientService
      */
     public function list(ListDTO $params): array
     {
-        return $this->recipientRepository->findByParams($params);
+        return $this->recipients->findByParams($params);
     }
 
     /**
@@ -199,9 +201,9 @@ class RecipientService
      *
      * @return array
      */
-    public function filters(): array
+    public function getEntityFilters(): array
     {
-        return $this->recipientRepository->findFilter();
+        return $this->recipients->findFilter();
     }
 
     /**
@@ -213,7 +215,7 @@ class RecipientService
      */
     public function recipient(int $id): array
     {
-        return ($result = $this->recipientRepository->find($id))
+        return ($result = $this->recipients->find($id))
             ? $result->toArray()
             : [];
     }
@@ -227,7 +229,7 @@ class RecipientService
      */
     public function history(HistoryDTO $params): array
     {
-        return $this->historyRepository->findByParams($params);
+        return $this->histories->findByParams($params);
     }
 
     /**
@@ -235,8 +237,8 @@ class RecipientService
      *
      * @return array
      */
-    public function historyFilters(): array
+    public function getHistoryFilters(): array
     {
-        return $this->historyRepository->findFilter();
+        return $this->histories->findFilter();
     }
 }

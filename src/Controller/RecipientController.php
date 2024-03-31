@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\DTO\Recipient\HistoryDTO;
 use App\DTO\Recipient\ListDTO;
-use App\DTO\Recipient\ParamsDTO;
+use App\DTO\Recipient\EntityDTO;
+use App\Enum\FilterTypeEnum;
+use App\Exception\DomainException;
 use App\Exception\RecipientException;
 use App\Service\NormalizerService;
 use App\Service\RecipientService;
@@ -61,12 +63,11 @@ class RecipientController extends JsonRpcController
     {
         try {
             $result = $this->service->list($params);
-            $result = $this->normalizer->normalize($result);
+            return $this->normalizer->normalize($result);
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;
         }
-        return $result;
     }
 
     /**
@@ -89,32 +90,31 @@ class RecipientController extends JsonRpcController
     }
 
     /**
-     * Получить доступные фильтры
+     * Получить доступные фильтры для выборки получателей
      *
+     * @param string|null $type Тип фильтров
      * @return array
-     * @throws Throwable
+     * @throws RecipientException
      */
-    public function filters(): array
+    public function filters(?string $type = null): array
     {
-        try {
-            $result = $this->service->filters();
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
+        return match ((null === $type) ? FilterTypeEnum::ENTITY : FilterTypeEnum::tryFrom($type)) {
+            FilterTypeEnum::HISTORY => $this->service->getHistoryFilters(),
+            FilterTypeEnum::ENTITY => $this->service->getEntityFilters(),
+            default => throw new RecipientException('Запрошен некорректный тип фильтров', RecipientException::BAD_VALUES)
+        };
     }
 
     /**
      * Сохранить данные получателя
      *
-     * @param ParamsDTO $params DTO параметров получателей
+     * @param EntityDTO $params DTO параметров получателей
      *
      * @return int|null
      * @throws RecipientException
      * @throws Throwable
      */
-    public function save(ParamsDTO $params): ?int
+    public function save(EntityDTO $params): ?int
     {
         try {
             $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
@@ -160,23 +160,6 @@ class RecipientController extends JsonRpcController
         try {
             $result = $this->service->history($params);
             $result = $this->normalizer->normalize($result);
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
-    }
-
-    /**
-     * Получить возможные фильтры для истории изменений
-     *
-     * @return array
-     * @throws Throwable
-     */
-    public function historyFilters(): array
-    {
-        try {
-            $result = $this->service->historyFilters();
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;

@@ -15,4 +15,7 @@ class RecipientException extends \Exception
 
     /** @var int Ошибка БД */
     public const DB_PROBLEM = 3;
+
+    /** @var int Дубликат записи */
+    public const DUPLICATE = 4;
 }

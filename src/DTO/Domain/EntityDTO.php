@@ -7,7 +7,7 @@ use Spatie\DataTransferObject\DataTransferObject;
 /**
  * DTO параметров для создания/изменения домена
  */
-class ParamsDTO extends DataTransferObject
+class EntityDTO extends DataTransferObject
 {
     /** @var int|null ID домена */
     public ?int $id;

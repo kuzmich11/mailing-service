@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\DTO\Domain\HistoryDTO;
 use App\DTO\Domain\ListDTO;
-use App\DTO\Domain\ParamsDTO;
+use App\DTO\Domain\EntityDTO;
+use App\Enum\FilterTypeEnum;
 use App\Exception\DomainException;
+use App\Exception\TemplateException;
 use App\Service\DomainService;
 use App\Service\NormalizerService;
 use Psr\Log\LoggerInterface;
@@ -52,22 +54,21 @@ class DomainController extends JsonRpcController
     /**
      * Сохранить данные домена
      *
-     * @param ParamsDTO $params DTO параметров домена
+     * @param EntityDTO $params DTO параметров домена
      *
      * @return int|null
      * @throws Throwable
      * @throws DomainException
      */
-    public function save(ParamsDTO $params): ?int
+    public function save(EntityDTO $params): ?int
     {
         try {
             $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-            $result = $this->service->save($params, $userUuid)->getId();
+            return $this->service->save($params, $userUuid)->getId();
         } catch (\Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
+            throw new DomainException('Запрошен некорректный тип фильтров', DomainException::BAD_VALUES);
         }
-        return $result;
     }
 
     /**
@@ -112,18 +113,17 @@ class DomainController extends JsonRpcController
     /**
      * Получить доступные фильтры для выборки доменов
      *
+     * @param string|null $type Тип фильтров
      * @return array
-     * @throws Throwable
+     * @throws DomainException
      */
-    public function filters(): array
+    public function filters(?string $type = null): array
     {
-        try {
-            $result = $this->service->filters();
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
+        return match ((null === $type) ? FilterTypeEnum::ENTITY : FilterTypeEnum::tryFrom($type)) {
+            FilterTypeEnum::HISTORY => $this->service->getHistoryFilters(),
+            FilterTypeEnum::ENTITY => $this->service->getEntityFilters(),
+            default => throw new DomainException('Запрошен некорректный тип фильтров', DomainException::BAD_VALUES)
+        };
     }
 
     /**
@@ -139,23 +139,6 @@ class DomainController extends JsonRpcController
         try {
             $result = $this->service->history($params);
             $result = $this->normalizer->normalize($result);
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
-    }
-
-    /**
-     * Получить доступные фильтры для истории
-     *
-     * @return array
-     * @throws Throwable
-     */
-    public function historyFilters(): array
-    {
-        try {
-            $result = $this->service->historyFilters();
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;

@@ -10,7 +10,7 @@ use Spatie\DataTransferObject\DataTransferObject;
 /**
  * DTO параметров получателей
  */
-class ParamsDTO extends DataTransferObject
+class EntityDTO extends DataTransferObject
 {
     /** @var int|null ID получателя */
     public ?int $id;
@@ -26,5 +26,5 @@ class ParamsDTO extends DataTransferObject
     public bool $isConsent = false;
 
     /** @var array|null Массив ID групп получателей */
-    public ?array $groupIds;
+    public ?array $groups;
 }

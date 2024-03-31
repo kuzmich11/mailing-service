@@ -26,4 +26,7 @@ class EntityDTO extends DataTransferObject
 
     /** @var array Массив переменных (плейсхолдеров) */
     public array $variables = [];
+
+    /** @var int|null № задачи для шаблона */
+    public ?int $taskNumber = null;
 }
