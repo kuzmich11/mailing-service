@@ -4,7 +4,7 @@ namespace App\Service;
 
 use App\DTO\Letter\HistoryDTO;
 use App\DTO\Letter\ListDTO;
-use App\DTO\Letter\ParamsDTO;
+use App\DTO\Letter\EntityDTO;
 use App\Entity\Letter;
 use App\Entity\LetterHistory;
 use App\Enum\LetterFormEnum;
@@ -48,7 +48,7 @@ class LetterService
         private readonly SmtpAccountRepository   $smtpRepository,
         private readonly EntityManagerInterface  $doctrine,
         private readonly EntityValidatorService  $entityValidator,
-        private readonly BrokerService           $broker
+//        private readonly BrokerService           $broker
     )
     {
     }
@@ -68,13 +68,13 @@ class LetterService
     /**
      * Сохранить данные письма
      *
-     * @param ParamsDTO $params   Параметры письма
+     * @param EntityDTO $params   Параметры письма
      * @param Uuid      $userUuid UUID сотрудника, вносящего изменение
      *
      * @return int|null
      * @throws LetterException
      */
-    public function save(ParamsDTO $params, Uuid $userUuid): ?int
+    public function save(EntityDTO $params, Uuid $userUuid): ?int
     {
         $letter = $params->id ? $this->letterRepository->find($params->id) : new Letter();
         if (null === $letter) {
@@ -158,8 +158,8 @@ class LetterService
             $letter->setCreator($userUuid);
             $letter->setCreatedAt(new \DateTimeImmutable('now'));
         } else {
-            $letter->setUpdater($userUuid);
-            $letter->setUpdatedAt(new \DateTimeImmutable('now'));
+            $letter->setEditor($userUuid);
+            $letter->setEditedAt(new \DateTimeImmutable('now'));
         }
 
         $validateResult = $this->entityValidator->validate($letter);
@@ -205,7 +205,7 @@ class LetterService
      *
      * @return array
      */
-    public function filters(): array
+    public function getEntityFilters(): array
     {
         return $this->letterRepository->findFilter();
     }
@@ -259,83 +259,83 @@ class LetterService
      *
      * @return array
      */
-    public function historyFilters(): array
+    public function getHistoryFilters(): array
     {
         return $this->history->findFilter();
     }
 
-    /**
-     * Поместить письмо в очередь на отправку
-     *
-     * @param int  $id       ID письма
-     * @param Uuid $userUuid UUID сотрудника
-     *
-     * @return array
-     * @throws LetterException
-     */
-    public function send(int $id, Uuid $userUuid): array
-    {
-        $letter = $this->letterRepository->find($id);
-        if (!$letter) {
-            throw new LetterException(
-                "Попытка отправить несуществующее письмо",
-                LetterException::NOT_EXISTS
-            );
-        }
-        if ($letter->getDeletedAt()) {
-            throw new LetterException(
-                "Попытка отправить удаленное письмо",
-                LetterException::BAD_VALUES
-            );
-        }
-        if (!$letter->getTemplate()) {
-            throw new LetterException(
-                "Не выбран шаблон для отправки письма",
-                LetterException::BAD_VALUES
-            );
-        }
-        if ($letter->getStatus() === LetterStatusEnum::PROCESSING) {
-            throw new LetterException('Указанное письмо уже в процессе отправки', LetterException::MAILING_ERROR);
-        }
-        // получить "рабочий" объект ЕЩЁ НЕ ОТПРАВЛЕННОГО письма
-        $letter = $this->getUnsentLetter($letter, $userUuid);
-        if ($letter->getForm() == LetterFormEnum::SYSTEM) {
-            $message = $this->broker->prepareSystem($letter);
-            if (null === $message) {
-                $letter->setStatus(LetterStatusEnum::BAD_RECIPIENT);
-                try {
-                    $this->doctrine->persist($letter);
-                    $this->doctrine->flush();
-                } catch (\Throwable $err) {
-                    $this->logger->error($err->getMessage(), ['Exception' => $err]);
-                    throw new LetterException('Ошибка сохранения данных письма в БД', LetterException::DB_PROBLEM);
-                }
-                $result = false;
-            } else {
-                $result = $this->broker->publishMessages([$message]);
-            }
-        } else {
-            $result = $this->broker->publishPromo(['id' => $letter->getId()]);
-        }
-        if ($result) {
-            $letter->setSender($userUuid);
-            $letter->setStatus(LetterStatusEnum::PROCESSING);
-            $letter->setSentAt(new \DateTimeImmutable('now'));
-        } else {
-            $letter->setStatus(LetterStatusEnum::NOT_SENT);
-        }
-        try {
-            $this->doctrine->persist($letter);
-            $this->doctrine->flush();
-        } catch (\Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw new LetterException('Ошибка сохранения данных письма в БД', LetterException::DB_PROBLEM);
-        }
-        return [
-            'id' => $letter->getId(),
-            'result' => $result
-        ];
-    }
+//    /**
+//     * Поместить письмо в очередь на отправку
+//     *
+//     * @param int  $id       ID письма
+//     * @param Uuid $userUuid UUID сотрудника
+//     *
+//     * @return array
+//     * @throws LetterException
+//     */
+//    public function send(int $id, Uuid $userUuid): array
+//    {
+//        $letter = $this->letterRepository->find($id);
+//        if (!$letter) {
+//            throw new LetterException(
+//                "Попытка отправить несуществующее письмо",
+//                LetterException::NOT_EXISTS
+//            );
+//        }
+//        if ($letter->getDeletedAt()) {
+//            throw new LetterException(
+//                "Попытка отправить удаленное письмо",
+//                LetterException::BAD_VALUES
+//            );
+//        }
+//        if (!$letter->getTemplate()) {
+//            throw new LetterException(
+//                "Не выбран шаблон для отправки письма",
+//                LetterException::BAD_VALUES
+//            );
+//        }
+//        if ($letter->getStatus() === LetterStatusEnum::PROCESSING) {
+//            throw new LetterException('Указанное письмо уже в процессе отправки', LetterException::MAILING_ERROR);
+//        }
+//        // получить "рабочий" объект ЕЩЁ НЕ ОТПРАВЛЕННОГО письма
+//        $letter = $this->getUnsentLetter($letter, $userUuid);
+//        if ($letter->getForm() == LetterFormEnum::SYSTEM) {
+//            $message = $this->broker->prepareSystem($letter);
+//            if (null === $message) {
+//                $letter->setStatus(LetterStatusEnum::BAD_RECIPIENT);
+//                try {
+//                    $this->doctrine->persist($letter);
+//                    $this->doctrine->flush();
+//                } catch (\Throwable $err) {
+//                    $this->logger->error($err->getMessage(), ['Exception' => $err]);
+//                    throw new LetterException('Ошибка сохранения данных письма в БД', LetterException::DB_PROBLEM);
+//                }
+//                $result = false;
+//            } else {
+//                $result = $this->broker->publishMessages([$message]);
+//            }
+//        } else {
+//            $result = $this->broker->publishPromo(['id' => $letter->getId()]);
+//        }
+//        if ($result) {
+//            $letter->setSender($userUuid);
+//            $letter->setStatus(LetterStatusEnum::PROCESSING);
+//            $letter->setSentAt(new \DateTimeImmutable('now'));
+//        } else {
+//            $letter->setStatus(LetterStatusEnum::NOT_SENT);
+//        }
+//        try {
+//            $this->doctrine->persist($letter);
+//            $this->doctrine->flush();
+//        } catch (\Throwable $err) {
+//            $this->logger->error($err->getMessage(), ['Exception' => $err]);
+//            throw new LetterException('Ошибка сохранения данных письма в БД', LetterException::DB_PROBLEM);
+//        }
+//        return [
+//            'id' => $letter->getId(),
+//            'result' => $result
+//        ];
+//    }
 
     /**
      * Получить объект НЕОТПРАВЛЕННОГО письма - при необходимости создать его в БД

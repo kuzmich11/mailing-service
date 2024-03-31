@@ -63,7 +63,7 @@ class Group
     private ?DateTimeImmutable $deletedAt = null;
 
     /** @var Collection Коллекция получателей связанных с группой */
-    #[ORM\ManyToMany(targetEntity: Recipient::class, mappedBy: 'groups', orphanRemoval: true)]
+    #[ORM\ManyToMany(targetEntity: Recipient::class, mappedBy: 'groups')]
     private Collection $recipients;
 
     /**
@@ -250,6 +250,11 @@ class Group
         }
 
         return $this;
+    }
+
+    public function clearRecipients(): void
+    {
+        $this->recipients->clear();
     }
 
     /**

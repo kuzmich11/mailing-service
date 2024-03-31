@@ -22,18 +22,18 @@ class SmtpService
     /**
      * Конструктор
      *
-     * @param LoggerInterface        $logger            Логгер
-     * @param EntityManagerInterface $entityManager     Интерфейс работы с БД
-     * @param EntityValidatorService $entityValidator   Сервис валидации сущностей БД
-     * @param SmtpAccountRepository  $smtpRepository    Репозиторий SMTP-аккаунтов
-     * @param SmtpHistoryRepository  $historyRepository Репозиторий истории изменений SMTP-аккаунтов
+     * @param LoggerInterface        $logger    Логгер
+     * @param EntityManagerInterface $doctrine  Интерфейс работы с БД
+     * @param EntityValidatorService $validator Сервис валидации сущностей БД
+     * @param SmtpAccountRepository  $smtps     Репозиторий SMTP-аккаунтов
+     * @param SmtpHistoryRepository  $histories Репозиторий истории изменений SMTP-аккаунтов
      */
     public function __construct(
         private readonly LoggerInterface        $logger,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly EntityValidatorService $entityValidator,
-        private readonly SmtpAccountRepository  $smtpRepository,
-        private readonly SmtpHistoryRepository  $historyRepository
+        private readonly EntityManagerInterface $doctrine,
+        private readonly EntityValidatorService $validator,
+        private readonly SmtpAccountRepository  $smtps,
+        private readonly SmtpHistoryRepository  $histories
     )
     {
     }
@@ -49,7 +49,7 @@ class SmtpService
      */
     public function save(EntityDTO $params, Uuid $userUuid): ?int
     {
-        $smtp = $params->id ? $this->smtpRepository->find($params->id) : new SmtpAccount();
+        $smtp = $params->id ? $this->smtps->find($params->id) : new SmtpAccount();
         if (null === $smtp) {
             throw new SmtpException(
                 "SMTP-аккаунта с ID: $params->id не существует",
@@ -117,7 +117,7 @@ class SmtpService
             $smtp->setActive($value);
         }
 
-        $validateResult = $this->entityValidator->validate($smtp);
+        $validateResult = $this->validator->validate($smtp);
         if (is_array($validateResult)) {
             throw new SmtpException(
                 implode("\n", $validateResult),
@@ -126,16 +126,16 @@ class SmtpService
         }
 
         try {
-            $this->entityManager->persist($smtp);
+            $this->doctrine->persist($smtp);
             if ($params->id && !empty($changes)) {
                 $history = new SmtpHistory();
                 $history->setSmtp($smtp);
                 $history->setChanges($changes);
                 $history->setEditor($userUuid);
                 $history->setEditedAt(new \DateTimeImmutable('now'));
-                $this->entityManager->persist($history);
+                $this->doctrine->persist($history);
             }
-            $this->entityManager->flush();
+            $this->doctrine->flush();
         } catch (\Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw new SmtpException(
@@ -155,7 +155,7 @@ class SmtpService
      */
     public function list(ListDTO $params): array
     {
-        return $this->smtpRepository->findByParams($params);
+        return $this->smtps->findByParams($params);
     }
 
     /**
@@ -167,7 +167,7 @@ class SmtpService
      */
     public function entity(int $id): array
     {
-        return ($result = $this->smtpRepository->find($id))
+        return ($result = $this->smtps->find($id))
             ? $result->toArray()
             : [];
     }
@@ -183,7 +183,7 @@ class SmtpService
      */
     public function delete(int $id, Uuid $userUuid): ?int
     {
-        $smtp = $this->smtpRepository->find($id);
+        $smtp = $this->smtps->find($id);
         if (!$smtp) {
             throw new SmtpException(
                 "Попытка удалить несуществующий SMTP-аккаунт с ID: $id",
@@ -197,9 +197,9 @@ class SmtpService
         $history->setEditor($userUuid);
         $history->setEditedAt(new \DateTimeImmutable('now'));
         try {
-            $this->entityManager->persist($smtp);
-            $this->entityManager->persist($history);
-            $this->entityManager->flush();
+            $this->doctrine->persist($smtp);
+            $this->doctrine->persist($history);
+            $this->doctrine->flush();
         } catch (\Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw new SmtpException(
@@ -214,9 +214,9 @@ class SmtpService
      *
      * @return array
      */
-    public function filters(): array
+    public function getEntityFilters(): array
     {
-        return $this->smtpRepository->findFilters();
+        return $this->smtps->findFilters();
     }
 
     /**
@@ -228,7 +228,7 @@ class SmtpService
      */
     public function history(HistoryDTO $params): array
     {
-        return $this->historyRepository->findByParams($params);
+        return $this->histories->findByParams($params);
     }
 
     /**
@@ -236,8 +236,8 @@ class SmtpService
      *
      * @return array
      */
-    public function historyFilters(): array
+    public function getHistoryFilters(): array
     {
-        return $this->historyRepository->findFilters();
+        return $this->histories->findFilters();
     }
 }

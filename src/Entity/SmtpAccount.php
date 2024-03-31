@@ -143,7 +143,7 @@ class SmtpAccount
      */
     public function getPassword(): ?string
     {
-        return $this->password;
+        return base64_decode($this->password);
     }
 
     /**
@@ -152,7 +152,7 @@ class SmtpAccount
      */
     public function setPassword(?string $password): static
     {
-        $this->password = $password;
+        $this->password = base64_encode($password);
 
         return $this;
     }
@@ -241,15 +241,15 @@ class SmtpAccount
     public function toArray(): array
     {
         return [
-            'id'                       => $this->id,
-            'host'                     => $this->host,
-            'title'                    => $this->title,
-            'login'                    => $this->login,
-            'password'                 => $this->password,
-            'port'                     => $this->port,
-            'is_system'                => $this->isSystem,
-            'is_deleted'               => $this->isDeleted,
-            'is_active'                => $this->isActive,
+            'id'                       => $this->getId(),
+            'host'                     => $this->getHost(),
+            'title'                    => $this->getTitle(),
+            'login'                    => $this->getLogin(),
+            'password'                 => $this->getPassword(),
+            'port'                     => $this->getPort(),
+            'is_system'                => $this->isSystem(),
+            'is_deleted'               => $this->isDeleted(),
+            'is_active'                => $this->isActive(),
         ];
     }
 }

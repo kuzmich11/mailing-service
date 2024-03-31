@@ -2,14 +2,14 @@
 
 namespace App\Service;
 
-use App\DTO\Group\AddDTO;
 use App\DTO\Group\HistoryDTO;
 use App\DTO\Group\ListDTO;
-use App\DTO\Group\ParamsDTO;
+use App\DTO\Group\EntityDTO;
 use App\Entity\GroupHistory;
 use App\Entity\Group;
 use App\Entity\Recipient;
 use App\Exception\GroupException;
+use App\Exception\RecipientException;
 use App\Repository\GroupHistoryRepository;
 use App\Repository\GroupRepository;
 use App\Repository\RecipientRepository;
@@ -27,20 +27,20 @@ class GroupService
     /**
      * Конструктор
      *
-     * @param GroupRepository        $groupRepository     Репозиторий групп
-     * @param RecipientRepository    $recipientRepository Репозиторий получателей
-     * @param GroupHistoryRepository $history             Репозиторий истории изменения групп
-     * @param EntityManagerInterface $entityManager       Интерфейс работы с БД
-     * @param LoggerInterface        $logger              Логгер
-     * @param EntityValidatorService $entityValidator     Сервис валидации данных
+     * @param GroupRepository        $groups     Репозиторий групп
+     * @param RecipientRepository    $recipients Репозиторий получателей
+     * @param GroupHistoryRepository $histories  Репозиторий истории изменения групп
+     * @param EntityManagerInterface $doctrine   Интерфейс работы с БД
+     * @param LoggerInterface        $logger     Логгер
+     * @param EntityValidatorService $validator  Сервис валидации данных
      */
     public function __construct(
-        private readonly GroupRepository        $groupRepository,
-        private readonly RecipientRepository    $recipientRepository,
-        private readonly GroupHistoryRepository $history,
-        private readonly EntityManagerInterface $entityManager,
+        private readonly GroupRepository        $groups,
+        private readonly RecipientRepository    $recipients,
+        private readonly GroupHistoryRepository $histories,
+        private readonly EntityManagerInterface $doctrine,
         private readonly LoggerInterface        $logger,
-        private readonly EntityValidatorService $entityValidator
+        private readonly EntityValidatorService $validator
     )
     {
     }
@@ -48,20 +48,18 @@ class GroupService
     /**
      * Сохранить в БД информацию записи группы получателей
      *
-     * @param ParamsDTO $params DTO параметров для сохранения|изменения группы
+     * @param EntityDTO $params DTO параметров для сохранения|изменения группы
      * @param Uuid $userUuid UUID сотрудника
      *
      * @return int|null
      * @throws GroupException
+     * @throws RecipientException
      */
-    public function save(ParamsDTO $params, Uuid $userUuid): ?int
+    public function save(EntityDTO $params, Uuid $userUuid): ?int
     {
-        $group = $params->id ? $this->groupRepository->find($params->id) : new Group();
+        $group = $params->id ? $this->groups->find($params->id) : new Group();
         if (null === $group) {
-            throw new GroupException(
-                "Для изменения отсутствует группа получателей с ID: $params->id",
-                GroupException::NOT_EXISTS
-            );
+            throw new GroupException("Отсутствует группа с ID: " . $params->id, GroupException::NOT_EXISTS);
         }
 
         $changes = [];
@@ -73,28 +71,33 @@ class GroupService
             ];
             $group->setName($params->name);
         }
-        if ($params->recipientIds) {
-            $recipients = $this->recipientRepository->findByIds($params->recipientIds);
-            if (!$recipients) {
-                throw new GroupException(
-                    "Заданные получатели не найдены",
-                    GroupException::NOT_EXISTS
-                );
+
+        $value = $params->recipients;
+        $recipientsId = array_map(fn(Recipient $recipient) => $recipient->getId(), $group->getRecipients()->toArray());
+        if ($recipientsId != $value) {
+            $recipients = $this->recipients->findBy(['id' => $value]);
+            if ($value && !$recipients) {
+                throw new GroupException("Заданные получатели не найдены", GroupException::NOT_EXISTS);
             }
-            array_walk($recipients, fn($recipient) => $group->addRecipient($recipient));
-            $changes['addRecipients'] = [
-                'recipientIds' => $params->recipientIds
-            ];
+            $changes['recipients'] = ['old' => $recipientsId, 'new' => []];
+            $group->clearRecipients();
+            if ($recipients) {
+                foreach ($recipients as $recipient) {
+                    $group->addRecipient($recipient);
+                    $changes['recipients']['new'][] = [$recipient->getId()];
+                }
+            }
         }
+
         if ($params->id) {
-            $group->setUpdater($userUuid);
-            $group->setUpdatedAt(new DateTimeImmutable('now'));
+            $group->setEditor($userUuid);
+            $group->setEditedAt(new DateTimeImmutable('now'));
         } else {
             $group->setCreator($userUuid);
             $group->setCreatedAt(new DateTimeImmutable('now'));
         }
 
-        $validateResult = $this->entityValidator->validate($group);
+        $validateResult = $this->validator->validate($group);
         if (is_array($validateResult)) {
             throw new GroupException(
                 implode("\n", $validateResult),
@@ -103,16 +106,16 @@ class GroupService
         }
 
         try {
-            $this->entityManager->persist($group);
+            $this->doctrine->persist($group);
             if ($params->id && !empty($changes)) {
                 $history = new GroupHistory();
                 $history->setGroup($group);
                 $history->setChanges($changes);
                 $history->setEditor($userUuid);
                 $history->setEditedAt(new \DateTimeImmutable('now'));
-                $this->entityManager->persist($history);
+                $this->doctrine->persist($history);
             }
-            $this->entityManager->flush();
+            $this->doctrine->flush();
         } catch (\Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw new GroupException(
@@ -134,7 +137,7 @@ class GroupService
      */
     public function delete(int $id, Uuid $userUuid): ?int
     {
-        $group = $this->groupRepository->find($id);
+        $group = $this->groups->find($id);
         if (null === $group) {
             throw new GroupException(
                 "Попытка удалить несуществующую группу получателей с ID: $id",
@@ -144,8 +147,8 @@ class GroupService
         $group->setDeleter($userUuid);
         $group->setDeletedAt(new DateTimeImmutable('now'));
         try {
-            $this->entityManager->persist($group);
-            $this->entityManager->flush();
+            $this->doctrine->persist($group);
+            $this->doctrine->flush();
         } catch (\Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw new GroupException(
@@ -165,7 +168,7 @@ class GroupService
      */
     public function list(ListDTO $params): array
     {
-        return $this->groupRepository->findByParams($params);
+        return $this->groups->findByParams($params);
     }
 
     /**
@@ -173,9 +176,9 @@ class GroupService
      *
      * @return array
      */
-    public function filters(): array
+    public function getEntityFilters(): array
     {
-        return $this->groupRepository->findFilters();
+        return $this->groups->findFilters();
     }
 
     /**
@@ -188,57 +191,9 @@ class GroupService
     public function group(int $id): array
     {
 
-        return ($group = $this->groupRepository->find($id))
+        return ($group = $this->groups->find($id))
             ? $group->toArray()
             : [];
-    }
-
-    /**
-     * Добавить получателя в группу
-     *
-     * @param AddDTO $addDTO DTO параметров добавления
-     * @param Uuid $userUuid UUID сотрудника
-     *
-     * @return bool
-     * @throws GroupException
-     */
-    public function addRecipient(AddDTO $addDTO, Uuid $userUuid): bool
-    {
-        $group = $this->groupRepository->find($addDTO->groupId);
-        if (null === $group) {
-            throw new GroupException(
-                "Попытка добавить получателя в несуществующую группу с ID: $addDTO->groupId",
-                GroupException::NOT_EXISTS
-            );
-        }
-        $recipients = $this->recipientRepository->findByIds($addDTO->recipientIds);
-        if (empty($recipients)) {
-            throw new GroupException(
-                "Нет получателей для добавления в группу с ID: $addDTO->groupId",
-                GroupException::NOT_EXISTS
-            );
-        }
-        array_walk($recipients, fn($recipient) => $group->addRecipient($recipient));
-        $changes['addRecipients'] = [
-            'recipientIds' => $addDTO->recipientIds
-        ];
-        try {
-            $this->entityManager->persist($group);
-            $history = new GroupHistory();
-            $history->setGroup($group);
-            $history->setChanges($changes);
-            $history->setEditor($userUuid);
-            $history->setEditedAt(new \DateTimeImmutable('now'));
-            $this->entityManager->persist($history);
-            $this->entityManager->flush();
-        } catch (\Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw new GroupException(
-                'Ошибка сохранения данных группы в БД',
-                GroupException::DB_PROBLEM
-            );
-        }
-        return true;
     }
 
     /**
@@ -251,7 +206,7 @@ class GroupService
      */
     public function recipients(int $id): array
     {
-        $group = $this->groupRepository->find($id);
+        $group = $this->groups->find($id);
         if (null === $group) {
             throw new GroupException(
                 "Группы с ID: $id не существует",
@@ -270,7 +225,7 @@ class GroupService
      */
     public function history(HistoryDTO $params): array
     {
-        return $this->history->findByParams($params);
+        return $this->histories->findByParams($params);
     }
 
     /**
@@ -278,56 +233,8 @@ class GroupService
      *
      * @return array
      */
-    public function historyFilters(): array
+    public function getHistoryFilters(): array
     {
-        return $this->history->findFilter();
-    }
-
-    /**
-     * @throws GroupException
-     * @throws Exception
-     */
-    public function removeRecipient(AddDTO $addDTO, Uuid $userUuid): bool
-    {
-        $group = $this->groupRepository->find($addDTO->groupId);
-        if (null === $group) {
-            throw new GroupException(
-                "Попытка удалить получателя из несуществующей группы с ID: $addDTO->groupId",
-                GroupException::NOT_EXISTS
-            );
-        }
-        $recipients = $group->getRecipients()->toArray();
-        $recipients = array_map(fn(Recipient $recipient) => $recipient->getId(), $recipients);
-        $recipients = array_intersect($addDTO->recipientIds, $recipients);
-        if (empty($recipients)) {
-            throw new GroupException(
-                "Нет получателей для удаления из группы с ID: $addDTO->groupId",
-                GroupException::NOT_EXISTS
-            );
-        }
-        $params = array_merge([$addDTO->groupId], $recipients);
-        $countRemove = count($params);
-        $strPH = str_repeat('?,', $countRemove - 1);
-        $queryString = 'DELETE FROM mail.recipient_group WHERE group_id = ? AND recipient_id IN (' . substr($strPH,0, strlen($strPH)-1) . ')';
-        $this->entityManager->getConnection()->executeQuery($queryString, $params);
-        $changes['removeRecipients'] = [
-            'recipientIds' => $recipients
-        ];
-        try {
-            $history = new GroupHistory();
-            $history->setGroup($group);
-            $history->setChanges($changes);
-            $history->setEditor($userUuid);
-            $history->setEditedAt(new \DateTimeImmutable('now'));
-            $this->entityManager->persist($history);
-            $this->entityManager->flush();
-        } catch (\Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw new GroupException(
-                'Ошибка сохранения данных группы в БД',
-                GroupException::DB_PROBLEM
-            );
-        }
-        return true;
+        return $this->histories->findFilter();
     }
 }

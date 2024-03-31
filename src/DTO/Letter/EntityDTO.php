@@ -10,7 +10,7 @@ use Spatie\DataTransferObject\DataTransferObject;
 /**
  * DTO параметров для создания/изменения письма
  */
-class ParamsDTO extends DataTransferObject
+class EntityDTO extends DataTransferObject
 {
     /** @var int|null ID письма */
     public ?int $id;

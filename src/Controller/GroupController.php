@@ -2,11 +2,12 @@
 
 namespace App\Controller;
 
-use App\DTO\Group\AddDTO;
 use App\DTO\Group\HistoryDTO;
 use App\DTO\Group\ListDTO;
-use App\DTO\Group\ParamsDTO;
+use App\DTO\Group\EntityDTO;
+use App\Enum\FilterTypeEnum;
 use App\Exception\GroupException;
+use App\Exception\RecipientException;
 use App\Service\NormalizerService;
 use App\Service\GroupService;
 use Psr\Log\LoggerInterface;
@@ -53,13 +54,13 @@ class GroupController extends JsonRpcController
     /**
      * Сохранить или изменить группу
      *
-     * @param ParamsDTO $params DTO параметров данных группы
+     * @param EntityDTO $params DTO параметров данных группы
      *
      * @return int|null
      * @throws Throwable
      * @throws GroupException
      */
-    public function save(ParamsDTO $params): ?int
+    public function save(EntityDTO $params): ?int
     {
         try {
             $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
@@ -132,41 +133,19 @@ class GroupController extends JsonRpcController
     }
 
     /**
-     * Получить доступные фильтры групп
+     * Получить доступные фильтры для выборки групп получателей
      *
+     * @param string|null $type Тип фильтров
      * @return array
-     * @throws Throwable
-     */
-    public function filters(): array
-    {
-        try {
-            $result = $this->service->filters();
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
-    }
-
-    /**
-     * Добавить получателя в группу
-     *
-     * @param AddDTO $addDTO DTO параметры для добавления получателей
-     *
-     * @return bool
-     * @throws Throwable
      * @throws GroupException
      */
-    public function addRecipient(AddDTO $addDTO): bool
+    public function filters(?string $type = null): array
     {
-        try {
-            $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-            $result = $this->service->addRecipient($addDTO, $userUuid);
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
+        return match ((null === $type) ? FilterTypeEnum::ENTITY : FilterTypeEnum::tryFrom($type)) {
+            FilterTypeEnum::HISTORY => $this->service->getHistoryFilters(),
+            FilterTypeEnum::ENTITY => $this->service->getEntityFilters(),
+            default => throw new GroupException('Запрошен некорректный тип фильтров', GroupException::BAD_VALUES)
+        };
     }
 
     /**
@@ -202,44 +181,6 @@ class GroupController extends JsonRpcController
         try {
             $result = $this->service->history($params);
             $result = $this->normalizer->normalize($result);
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
-    }
-
-    /**
-     * Получить возможные фильтры для истории изменений
-     *
-     * @return array
-     * @throws Throwable
-     */
-    public function historyFilters(): array
-    {
-        try {
-            $result = $this->service->historyFilters();
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
-    }
-
-    /**
-     * Удалить получателя из группы
-     *
-     * @param AddDTO $addDTO DTO параметры добавления|удаления получателей в группе
-     *
-     * @return bool
-     * @throws GroupException
-     * @throws Throwable
-     */
-    public function removeRecipient(AddDTO $addDTO): bool
-    {
-        try {
-            $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-            $result = $this->service->removeRecipient($addDTO, $userUuid);
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;

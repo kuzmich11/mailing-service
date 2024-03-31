@@ -5,6 +5,7 @@ namespace App\Service;
 use App\DTO\Recipient\HistoryDTO;
 use App\DTO\Recipient\ListDTO;
 use App\DTO\Recipient\EntityDTO;
+use App\Entity\Group;
 use App\Entity\Recipient;
 use App\Exception\DomainException;
 use App\Entity\RecipientHistory;
@@ -27,14 +28,14 @@ class RecipientService
     /**
      * Конструктор
      *
-     * @param LoggerInterface            $logger        Репозиторий получателей
-     * @param EntityManagerInterface     $doctrine      Интерфейс для работы с БД
-     * @param RecipientRepository        $recipients    Репозиторий получателей
-     * @param RecipientHistoryRepository $histories     Репозиторий истории изменений получателей
-     * @param GroupRepository            $groups        Репозиторий групп
-     * @param DomainRepository           $domains       Репозиторий доменов
-     * @param DomainService              $domainService Сервис работы с доменами
-     * @param EntityValidatorService     $validator     Сервис валидации сущностей БД
+     * @param LoggerInterface $logger Репозиторий получателей
+     * @param EntityManagerInterface $doctrine Интерфейс для работы с БД
+     * @param RecipientRepository $recipients Репозиторий получателей
+     * @param RecipientHistoryRepository $histories Репозиторий истории изменений получателей
+     * @param GroupRepository $groups Репозиторий групп
+     * @param DomainRepository $domains Репозиторий доменов
+     * @param DomainService $domainService Сервис работы с доменами
+     * @param EntityValidatorService $validator Сервис валидации сущностей БД
      */
     public function __construct(
         private readonly LoggerInterface            $logger,
@@ -61,10 +62,6 @@ class RecipientService
      */
     public function save(EntityDTO $params, Uuid $userUuid): ?int
     {
-        if ($this->recipients->findOneBy(['email' => $params->email])) {
-            throw new RecipientException("Получатель с email: $params->email уже существует", RecipientException::DUPLICATE);
-        }
-
         $recipient = $params->id ? $this->recipients->find($params->id) : new Recipient();
         if (!$recipient) {
             throw new RecipientException('Отсутствует получатель c ID: ' . $params->id, RecipientException::NOT_EXISTS);
@@ -73,9 +70,12 @@ class RecipientService
         $changes = [];
         $value = $params->email;
         if ($recipient->getEmail() !== $value) {
+            if ($this->recipients->findOneBy(['email' => $params->email])) {
+                throw new RecipientException("Получатель с email: $params->email уже существует", RecipientException::DUPLICATE);
+            }
             $changes['email'] = [
                 'old' => $recipient->getEmail(),
-                'new' => $params->email
+                'new' => $value
             ];
             $domainName = substr($value, strpos($value, '@') + 1);
             $domain = $this->domains->findOneBy(['name' => $domainName]);
@@ -102,21 +102,24 @@ class RecipientService
             ];
             $recipient->setConsent($value);
         }
-        if ($params->groups) {
-            $groups = $this->groups->findByIds($params->groups);
-            if (!$groups) {
-                throw new RecipientException(
-                    "Заданные группы не найдены",
-                    RecipientException::NOT_EXISTS
-                );
+
+        $value = $params->groups;
+        $groupsId = array_map(fn(Group $group) => $group->getId(), $recipient->getGroups()->toArray());
+        if ($groupsId !== $value) {
+            $groups = $this->groups->findBy(['id' => $value]);
+            if ($value && !$groups) {
+                throw new RecipientException("Заданные группы не найдены", RecipientException::NOT_EXISTS);
             }
-            array_walk($groups, fn($group) => $recipient->addGroup($group));
-            if ($params->id) {
-                $changes['addGroups'] = [
-                    'groupIds' => $params->groups
-                ];
+            $changes['groups'] = ['old' => $groupsId, 'new' => []];
+            $recipient->clearGroup();
+            if ($groups) {
+                foreach ($groups as $group) {
+                    $recipient->addGroup($group);
+                    $changes['groups']['new'] = array_merge($changes['groups']['new'], [$group->getId()]);
+                }
             }
         }
+
         if (!$params->id) {
             $recipient->setCreator($userUuid);
             $recipient->setCreatedAt(new \DateTimeImmutable('now'));
@@ -146,9 +149,7 @@ class RecipientService
             $this->doctrine->flush();
         } catch (\Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw new RecipientException(
-                'Ошибка сохранения данных получателя в БД',
-                RecipientException::DB_PROBLEM);
+            throw new RecipientException('Ошибка сохранения данных получателя в БД', RecipientException::DB_PROBLEM);
         }
         return $recipient->getId();
     }

@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\DTO\Letter\HistoryDTO;
 use App\DTO\Letter\ListDTO;
-use App\DTO\Letter\ParamsDTO;
+use App\DTO\Letter\EntityDTO;
+use App\Enum\FilterTypeEnum;
 use App\Exception\LetterException;
+use App\Exception\SmtpException;
 use App\Service\NormalizerService;
 use App\Service\LetterService;
 use Psr\Log\LoggerInterface;
@@ -24,13 +26,13 @@ class LetterController extends JsonRpcController
 {
     /**
      * Конструктор
-     * @param LoggerInterface   $logger        Логер
-     * @param LetterService     $letterService Сервис данных писем
-     * @param NormalizerService $normalizer    Нормализатор данных сущностей
+     * @param LoggerInterface   $logger     Логер
+     * @param LetterService     $service    Сервис данных писем
+     * @param NormalizerService $normalizer Нормализатор данных сущностей
      */
     public function __construct(
         private readonly LoggerInterface   $logger,
-        private readonly LetterService     $letterService,
+        private readonly LetterService     $service,
         private readonly NormalizerService $normalizer
     )
     {
@@ -60,7 +62,7 @@ class LetterController extends JsonRpcController
     public function list(ListDTO $params): array
     {
         try {
-            $result = $this->letterService->list($params);
+            $result = $this->service->list($params);
             return $this->normalizer->normalize($result);
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
@@ -71,17 +73,17 @@ class LetterController extends JsonRpcController
     /**
      * Сохранить данные письма
      *
-     * @param ParamsDTO $params DTO параметров письма
+     * @param EntityDTO $params DTO параметров письма
      *
      * @return int|null
      * @throws LetterException
      * @throws Throwable
      */
-    public function save(ParamsDTO $params): ?int
+    public function save(EntityDTO $params): ?int
     {
         try {
             $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-            return $this->letterService->save($params, $userUuid);
+            return $this->service->save($params, $userUuid);
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;
@@ -101,7 +103,7 @@ class LetterController extends JsonRpcController
     {
         try {
             $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-            return $this->letterService->delete($id, $userUuid);
+            return $this->service->delete($id, $userUuid);
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;
@@ -109,19 +111,19 @@ class LetterController extends JsonRpcController
     }
 
     /**
-     * Получить доступные фильтры
+     * Получить доступные фильтры для выборки SMTP-аккаунтов
      *
+     * @param string|null $type Тип фильтров
      * @return array
-     * @throws Throwable
+     * @throws LetterException
      */
-    public function filters(): array
+    public function filters(?string $type = null): array
     {
-        try {
-            return $this->letterService->filters();
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
+        return match ((null === $type) ? FilterTypeEnum::ENTITY : FilterTypeEnum::tryFrom($type)) {
+            FilterTypeEnum::HISTORY => $this->service->getHistoryFilters(),
+            FilterTypeEnum::ENTITY => $this->service->getEntityFilters(),
+            default => throw new LetterException('Запрошен некорректный тип фильтров', LetterException::BAD_VALUES)
+        };
     }
 
     /**
@@ -135,32 +137,32 @@ class LetterController extends JsonRpcController
     public function entity(int $id): array
     {
         try {
-            return $this->letterService->entity($id)?->toArray() ?: [];
+            return $this->service->entity($id)?->toArray() ?: [];
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;
         }
     }
 
-    /**
-     * Поместить письмо в очередь для отправки
-     *
-     * @param int $id Идентификатор письма для рассылки
-     *
-     * @return array
-     * @throws LetterException
-     * @throws Throwable
-     */
-    public function send(int $id): array
-    {
-        try {
-            $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-            return $this->letterService->send($id, $userUuid);
-        } catch (\Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-    }
+//    /**
+//     * Поместить письмо в очередь для отправки
+//     *
+//     * @param int $id Идентификатор письма для рассылки
+//     *
+//     * @return array
+//     * @throws LetterException
+//     * @throws Throwable
+//     */
+//    public function send(int $id): array
+//    {
+//        try {
+//            $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
+//            return $this->service->send($id, $userUuid);
+//        } catch (\Throwable $err) {
+//            $this->logger->error($err->getMessage(), ['Exception' => $err]);
+//            throw $err;
+//        }
+//    }
 
     /** Получить историю изменения писем
      *
@@ -172,24 +174,8 @@ class LetterController extends JsonRpcController
     public function history(HistoryDTO $params): array
     {
         try {
-            $result = $this->letterService->history($params);
+            $result = $this->service->history($params);
             return $this->normalizer->normalize($result);
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-    }
-
-    /**
-     * Получить возможные фильтры для истории
-     *
-     * @return array
-     * @throws Throwable
-     */
-    public function historyFilters(): array
-    {
-        try {
-            return $this->letterService->historyFilters();
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;

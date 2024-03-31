@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\DTO\Smtp\HistoryDTO;
 use App\DTO\Smtp\ListDTO;
 use App\DTO\Smtp\EntityDTO;
+use App\Enum\FilterTypeEnum;
+use App\Exception\GroupException;
+use App\Exception\SmtpException;
 use App\Service\NormalizerService;
 use App\Service\SmtpService;
 use Psr\Log\LoggerInterface;
@@ -130,20 +133,19 @@ class SmtpController extends JsonRpcController
     }
 
     /**
-     * Получить доступные фильтры
+     * Получить доступные фильтры для выборки SMTP-аккаунтов
      *
+     * @param string|null $type Тип фильтров
      * @return array
-     * @throws Throwable
+     * @throws SmtpException
      */
-    public function filters(): array
+    public function filters(?string $type = null): array
     {
-        try {
-            $result = $this->service->filters();
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
+        return match ((null === $type) ? FilterTypeEnum::ENTITY : FilterTypeEnum::tryFrom($type)) {
+            FilterTypeEnum::HISTORY => $this->service->getHistoryFilters(),
+            FilterTypeEnum::ENTITY => $this->service->getEntityFilters(),
+            default => throw new SmtpException('Запрошен некорректный тип фильтров', SmtpException::BAD_VALUES)
+        };
     }
 
     /** Получить историю изменения SMTP-аккаунтов
@@ -158,23 +160,6 @@ class SmtpController extends JsonRpcController
         try {
             $result = $this->service->history($params);
             $result = $this->normalizer->normalize($result);
-        } catch (Throwable $err) {
-            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-            throw $err;
-        }
-        return $result;
-    }
-
-    /**
-     * Получить возможные фильтры для истории изменений
-     *
-     * @return array
-     * @throws Throwable
-     */
-    public function historyFilters(): array
-    {
-        try {
-            $result = $this->service->historyFilters();
         } catch (Throwable $err) {
             $this->logger->error($err->getMessage(), ['Exception' => $err]);
             throw $err;

@@ -7,7 +7,7 @@ use Spatie\DataTransferObject\DataTransferObject;
 /**
  * DTO параметров групп
  */
-class ParamsDTO extends DataTransferObject
+class EntityDTO extends DataTransferObject
 {
     /** @var int|null ID группы */
     public ?int $id;
@@ -16,5 +16,5 @@ class ParamsDTO extends DataTransferObject
     public string $name;
 
     /** @var array|null ID получателей связанных с группой */
-    public ?array $recipientIds;
+    public ?array $recipients;
 }
