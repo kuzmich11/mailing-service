@@ -2,12 +2,12 @@
 
 namespace App\DTO\Group;
 
-use App\DTO\GeneralListDTO;
+use App\DTO\BaselListDTO;
 
 /**
  * DTO структура для выборки групп
  */
-class ListDTO extends GeneralListDTO
+class ListDTO extends BaselListDTO
 {
     /** @var FilterDTO|null Параметры фильтрации */
     public ?FilterDTO $filter;

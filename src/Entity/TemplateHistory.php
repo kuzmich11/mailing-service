@@ -43,7 +43,7 @@ class TemplateHistory
 
     /** @var DateTimeImmutable|null Когда были внесены изменения */
     #[ORM\Column(precision: 0, options: ['comment' => 'Когда сохранены изменения'])]
-    private ?DateTimeImmutable $edited_at = null;
+    private ?DateTimeImmutable $editedAt = null;
 
     /**
      * @return int|null
@@ -115,16 +115,16 @@ class TemplateHistory
      */
     public function getEditedAt(): ?DateTimeImmutable
     {
-        return $this->edited_at;
+        return $this->editedAt;
     }
 
     /**
-     * @param DateTimeImmutable $edited_at
+     * @param DateTimeImmutable $editedAt
      * @return $this
      */
-    public function setEditedAt(DateTimeImmutable $edited_at): static
+    public function setEditedAt(DateTimeImmutable $editedAt): static
     {
-        $this->edited_at = $edited_at;
+        $this->editedAt = $editedAt;
 
         return $this;
     }
@@ -141,7 +141,7 @@ class TemplateHistory
             'template' => $this->template->getId(),
             'changes' => $this->changes,
             'editor' => $this->editor,
-            'edited_at' => $this->edited_at
+            'edited_at' => $this->editedAt
         ];
     }
 }

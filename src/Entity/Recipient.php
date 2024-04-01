@@ -81,7 +81,7 @@ class Recipient
     private ?DateTimeImmutable $deletedAt = null;
 
     /** @var Collection Группы получателей */
-    #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'recipients', orphanRemoval: true)]
+    #[ORM\ManyToMany(targetEntity: Group::class, inversedBy: 'recipients')]
     #[ORM\JoinTable(name: 'recipient_group', schema: 'mail', options: ['comment' => 'Связующая таблица получателей с группами'])]
     #[ORM\JoinColumn(name: 'recipient_id', referencedColumnName: 'id', options: ['comment' => 'Получатель'])]
     #[ORM\InverseJoinColumn(name: 'group_id', referencedColumnName: 'id', options: ['comment' => 'Группа'])]
@@ -319,6 +319,11 @@ class Recipient
         return $this;
     }
 
+    public function clearGroup(): void
+    {
+        $this->groups->clear();
+    }
+
     /**
      * @return Domain|null
      */
@@ -357,7 +362,7 @@ class Recipient
             'editedAt' => $this->editedAt,
             'deletedAt' => $this->deletedAt,
             'domain'    => $this->domain->toArray(),
-            'groups'    => array_map(static fn(Group $group) => $group->getId(), $this->groups->toArray())
+            'groups'    => array_map(fn(Group $group) => $group->getId(), $this->groups->toArray())
         ];
     }
 }

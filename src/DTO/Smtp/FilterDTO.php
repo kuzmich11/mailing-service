@@ -24,9 +24,6 @@ class FilterDTO extends DataTransferObject
     /** @var bool|null Тип аккаунта (true - системный, false - рекламный) */
     public ?bool $isSystem;
 
-    /** @var bool|null Наличие шифрования */
-    public ?bool $isEncrypt;
-
     /** @var bool|null Флаг отображения удаленных аккаунтов (true - вместе с удаленными) */
     public ?bool $withDeleted = false;
 

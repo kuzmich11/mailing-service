@@ -61,7 +61,7 @@ class Template
 
     /** @var DateTimeImmutable|null Когда создан шаблон */
     #[ORM\Column(precision: 0, options: ['default' => 'CURRENT_TIMESTAMP', 'comment' => 'Когда создан шаблон'])]
-    private ?DateTimeImmutable $created_at = null;
+    private ?DateTimeImmutable $createdAt = null;
 
     /** @var Uuid|null UUID сотрудника, редактировавшего шаблон */
     #[ORM\Column(type: UuidType::NAME, nullable: true, options: ['comment' => 'UUID сотрудника, редактировавшего шаблон'])]
@@ -70,7 +70,7 @@ class Template
 
     /** @var DateTimeImmutable|null Когда было предыдущее редактирование */
     #[ORM\Column(precision: 0, nullable: true, options: ['comment' => 'Когда было предыдущее редактирование'])]
-    private ?DateTimeImmutable $edited_at = null;
+    private ?DateTimeImmutable $editedAt = null;
 
     /** @var Uuid|null UUID сотрудника, кто удалил шаблон */
     #[ORM\Column(type: UuidType::NAME, nullable: true, options: ['comment' => 'UUID сотрудника, кто удалил шаблон'])]
@@ -79,7 +79,7 @@ class Template
 
     /** @var DateTimeImmutable|null Когда шаблон был удален */
     #[ORM\Column(precision: 0, nullable: true, options: ['comment' => 'Когда шаблон был удален'])]
-    private ?DateTimeImmutable $deleted_at = null;
+    private ?DateTimeImmutable $deletedAt = null;
 
     /**
      * @return int|null
@@ -219,7 +219,7 @@ class Template
      */
     public function getCreatedAt(): ?DateTimeImmutable
     {
-        return $this->created_at;
+        return $this->createdAt;
     }
 
     /**
@@ -228,7 +228,7 @@ class Template
      */
     public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
-        $this->created_at = $createdAt;
+        $this->createdAt = $createdAt;
 
         return $this;
     }
@@ -257,7 +257,7 @@ class Template
      */
     public function getEditedAt(): ?DateTimeImmutable
     {
-        return $this->edited_at;
+        return $this->editedAt;
     }
 
     /**
@@ -266,7 +266,7 @@ class Template
      */
     public function setEditedAt(?DateTimeImmutable $editedAt): static
     {
-        $this->edited_at = $editedAt;
+        $this->editedAt = $editedAt;
 
         return $this;
     }
@@ -295,7 +295,7 @@ class Template
      */
     public function getDeletedAt(): ?DateTimeImmutable
     {
-        return $this->deleted_at;
+        return $this->deletedAt;
     }
 
     /**
@@ -304,7 +304,7 @@ class Template
      */
     public function setDeletedAt(?DateTimeImmutable $deletedAt): static
     {
-        $this->deleted_at = $deletedAt;
+        $this->deletedAt = $deletedAt;
 
         return $this;
     }
@@ -326,9 +326,9 @@ class Template
             'creator' => $this->creator,
             'editor' => $this->editor,
             'deleter' => $this->deleter,
-            'created_at' => $this->created_at,
-            'edited_at' => $this->edited_at,
-            'deleted_at' => $this->deleted_at,
+            'created_at' => $this->createdAt,
+            'edited_at' => $this->editedAt,
+            'deleted_at' => $this->deletedAt,
         ];
     }
 }

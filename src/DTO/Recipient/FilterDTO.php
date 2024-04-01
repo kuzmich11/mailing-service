@@ -26,7 +26,7 @@ class FilterDTO extends DataTransferObject
     public ?EmailStateEnum $emailState;
 
     /** @var bool|null Согласие получателя на рассылку */
-    public ?bool $isConsent = false;
+    public ?bool $isConsent;
 
     /** @var UUID|null UUID создателя записи получателя */
     #[CastWith(UuidCaster::class)]
