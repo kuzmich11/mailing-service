@@ -7,7 +7,6 @@ use App\DTO\Letter\ListDTO;
 use App\DTO\Letter\EntityDTO;
 use App\Enum\FilterTypeEnum;
 use App\Exception\LetterException;
-use App\Exception\SmtpException;
 use App\Service\NormalizerService;
 use App\Service\LetterService;
 use Psr\Log\LoggerInterface;
@@ -144,25 +143,25 @@ class LetterController extends JsonRpcController
         }
     }
 
-//    /**
-//     * Поместить письмо в очередь для отправки
-//     *
-//     * @param int $id Идентификатор письма для рассылки
-//     *
-//     * @return array
-//     * @throws LetterException
-//     * @throws Throwable
-//     */
-//    public function send(int $id): array
-//    {
-//        try {
-//            $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
-//            return $this->service->send($id, $userUuid);
-//        } catch (\Throwable $err) {
-//            $this->logger->error($err->getMessage(), ['Exception' => $err]);
-//            throw $err;
-//        }
-//    }
+    /**
+     * Поместить письмо в очередь для отправки
+     *
+     * @param int $id Идентификатор письма для рассылки
+     *
+     * @return array
+     * @throws LetterException
+     * @throws Throwable
+     */
+    public function send(int $id): array
+    {
+        try {
+            $userUuid = Uuid::fromString($this->getRequestHeaders('x-api-key'));
+            return $this->service->send($id, $userUuid);
+        } catch (\Throwable $err) {
+            $this->logger->error($err->getMessage(), ['Exception' => $err]);
+            throw $err;
+        }
+    }
 
     /** Получить историю изменения писем
      *

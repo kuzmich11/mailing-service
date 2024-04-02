@@ -28,6 +28,8 @@ RUN apk update \
         wget \
         bash \
         libmemcached-dev \
+        rabbitmq-c \
+        rabbitmq-c-dev \
    &&  apk add --update linux-headers
 
 # Install Composer
@@ -42,11 +44,13 @@ RUN docker-php-ext-install -j$(getconf _NPROCESSORS_ONLN) \
     pdo_pgsql \
     sockets \
     zip
-#RUN pecl channel-update pecl.php.net \
-#    && pecl install -o -f \
+RUN pecl channel-update pecl.php.net \
+    && pecl install -o -f \
+        amqp \
 #        redis \
 #        event \
 #        memcached \
+    && echo "extension=amqp.so" > /usr/local/etc/php/conf.d/amqp.ini
 #    && rm -rf /tmp/pear \
 #    && echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini \
 #    && echo "extension=event.so" > /usr/local/etc/php/conf.d/event.ini \
