@@ -56,6 +56,8 @@ RUN pecl channel-update pecl.php.net \
 #    && echo "extension=event.so" > /usr/local/etc/php/conf.d/event.ini \
 #    && echo "extension=memcached.so" > /usr/local/etc/php/conf.d/memcached.ini
 
+RUN apk add supervisor && mkdir /var/log/supervisor
+
 RUN pecl install xdebug \
 && docker-php-ext-enable xdebug
 COPY xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini

@@ -9,81 +9,46 @@ framework:
                 options:
                     vhost: /mail
                     exchange:
-                        name: priority
-#                        type: !php/const AMQP_EX_TYPE_DIRECT
-#                        flags: !php/const AMQP_DURABLE
+                        name: async.priority
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
                     queues:
-                        priority:
-#                            flags: !php/const AMQP_DURABLE
-#                            arguments:
-#                                x-max-priority: 100
-#                            binding_keys:
-#                                - 'async_priority'
-#            async_priority:
-#                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
-#                options:
-#                    queue:
-#                        name: priority
-
+                        priority: ~
             async.regular:
                 dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
                 options:
                     vhost: /mail
                     exchange:
-                        name: regular
-#                        type: !php/const AMQP_EX_TYPE_DIRECT
-#                        flags: !php/const AMQP_DURABLE
+                        name: async.regular
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
                     queues:
-                        regular:
-#                            flags: !php/const AMQP_DURABLE
-#                            arguments:
-#                                x-max-priority: 100
-#                            binding_keys:
-#                                - 'async_regular'
-
+                        regular: ~
             async.broadcast:
                 dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
                 options:
                     vhost: /mail
                     exchange:
-                        name: broadcast
-#                        type: !php/const AMQP_EX_TYPE_DIRECT
-#                        flags: !php/const AMQP_DURABLE
+                        name: async.broadcast
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
                     queues:
                         broadcast: ~
-#                            flags: !php/const AMQP_DURABLE
-#                            arguments:
-#                                x-max-priority: 100
-#                            binding_keys:
-#                                - 'async_broadcast'
-
             async.results:
                 dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
                 options:
                     vhost: /mail
                     exchange:
-                        name: results
-#                        type: !php/const AMQP_EX_TYPE_DIRECT
-#                        flags: !php/const AMQP_DURABLE
+                        name: async.results
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
                     queues:
-                        result: ~
-#                            flags: !php/const AMQP_DURABLE
-#                            arguments:
-#                                x-max-priority: 100
-#                            binding_keys:
-#                                - 'async_result'
-
-            # https://symfony.com/doc/current/messenger.html#transport-configuration
-            # async: '%env(MESSENGER_TRANSPORT_DSN)%'
-            # failed: 'doctrine://default?queue_name=failed'
-            # sync: 'sync://'
+                        results: ~
 
         routing:
             'App\Message\Message': [ async.priority, async.regular ]
             'App\Message\BroadcastMessage': [ async.broadcast ]
             'App\Message\ResultMessage': [ async.results ]
-            # Route your messages to the transports
-            # 'App\Message\YourMessage': async
 
 # when@test:
 #    framework:

@@ -125,12 +125,9 @@ class LetterService
         }
         $value = $params->attachments;
         if (!empty($value)) {
-            $attachments = $this->fileRepository->findBy(['id' => $params->smtp]);
+            $attachments = $this->fileRepository->findBy(['id' => $params->attachments]);
             if (!$attachments) {
-                throw new FileException(
-                    "Заданные вложения не найдены",
-                    FileException::NOT_EXISTS
-                );
+                throw new FileException("Заданные вложения не найдены", FileException::NOT_EXISTS);
             }
             array_walk($attachments, fn($file) => $letter->addAttachment($file));
             if ($params->id) {
