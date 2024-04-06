@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\DTO\File\EntityDTO;
 use App\Exception\FileException;
+use JsonRpcBundle\JsonRpcController;
 use App\Service\FileService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;

@@ -2,12 +2,12 @@
 
 namespace App\Controller;
 
+use App\DTO\Domain\EntityDTO;
 use App\DTO\Domain\HistoryDTO;
 use App\DTO\Domain\ListDTO;
-use App\DTO\Domain\EntityDTO;
 use App\Enum\FilterTypeEnum;
 use App\Exception\DomainException;
-use App\Exception\TemplateException;
+use JsonRpcBundle\JsonRpcController;
 use App\Service\DomainService;
 use App\Service\NormalizerService;
 use Psr\Log\LoggerInterface;

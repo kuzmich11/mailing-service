@@ -26,6 +26,9 @@
             "migrations/.gitignore"
         ]
     },
+    "kuzmich11/jsonrpc-bundle": {
+        "version": "dev-master"
+    },
     "league/flysystem-bundle": {
         "version": "3.3",
         "recipe": {

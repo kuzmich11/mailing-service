@@ -2,14 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\MailingList;
-use App\Repository\MailingListRepository;
+use JsonRpcBundle\JsonRpcController;
+
 //use App\Service\EntityNormalizeService;
-use App\Service\RecipientService;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
 
 class MailingListController extends JsonRpcController
 {
