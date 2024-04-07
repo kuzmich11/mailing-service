@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repository;
+namespace FileManagerBundle\Repository;
 
-use App\Entity\File;
+use FileManagerBundle\Entity\File;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

@@ -7,4 +7,5 @@ return [
     Symfony\Bundle\TwigBundle\TwigBundle::class => ['all' => true],
     League\FlysystemBundle\FlysystemBundle::class => ['all' => true],
     JsonRpcBundle\JsonRpcBundle::class => ['all' => true],
+    FileManagerBundle\FileManagerBundle::class => ['all' => true],
 ];

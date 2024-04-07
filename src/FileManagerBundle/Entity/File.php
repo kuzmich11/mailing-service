@@ -1,11 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace FileManagerBundle\Entity;
 
-use App\Repository\FileRepository;
+use FileManagerBundle\Repository\FileRepository;
 use DateTimeImmutable;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -49,18 +47,6 @@ class File
     /** @var DateTimeImmutable|null Дата удаления */
     #[ORM\Column(nullable: true, options: ['comment' => 'Дата удаления'])]
     private ?DateTimeImmutable $deletedAt = null;
-
-    /** @var Collection|ArrayCollection Связанные письма */
-    #[ORM\ManyToMany(targetEntity: 'Letter', mappedBy: 'attachments')]
-    private Collection|ArrayCollection $letters;
-
-    /**
-     * Конструктор
-     */
-    public function __construct()
-    {
-        $this->letters = new ArrayCollection();
-    }
 
     /**
      * @return int|null
@@ -182,26 +168,6 @@ class File
         $this->deletedAt = $deletedAt;
 
         return $this;
-    }
-
-
-    /**
-     * @return Collection
-     */
-    public function getLetters(): Collection
-    {
-        return $this->letters;
-    }
-
-    /**
-     * @param Letter $letter
-     */
-    public function addLetter(Letter $letter): void
-    {
-        if (!$this->letters->contains($letter)) {
-            $this->letters->add($letter);
-            $letter->addAttachment($this);
-        }
     }
 
     /**

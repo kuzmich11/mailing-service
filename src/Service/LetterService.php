@@ -2,18 +2,18 @@
 
 namespace App\Service;
 
+use App\DTO\Letter\EntityDTO;
 use App\DTO\Letter\HistoryDTO;
 use App\DTO\Letter\ListDTO;
-use App\DTO\Letter\EntityDTO;
 use App\Entity\Letter;
 use App\Entity\LetterHistory;
 use App\Enum\LetterFormEnum;
 use App\Enum\LetterStatusEnum;
-use App\Exception\FileException;
 use App\Exception\LetterException;
 use App\Exception\SmtpException;
+use FileManagerBundle\Exception\FileException;
+use FileManagerBundle\Repository\FileRepository;
 use App\Repository\LetterHistoryRepository;
-use App\Repository\FileRepository;
 use App\Repository\LetterRepository;
 use App\Repository\SmtpAccountRepository;
 use App\Repository\TemplateRepository;

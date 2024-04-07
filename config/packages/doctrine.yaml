@@ -22,6 +22,12 @@ doctrine:
                 dir: '%kernel.project_dir%/src/Entity'
                 prefix: 'App\Entity'
                 alias: App
+            FileManagerBundle:
+                is_bundle: true
+                type: attribute
+                dir: 'Entity'
+                prefix: 'FeedBundle\Entity'
+                alias: FeedBundle
         controller_resolver:
             auto_mapping: false
 

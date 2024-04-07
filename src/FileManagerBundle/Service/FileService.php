@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Service;
+namespace FileManagerBundle\Service;
 
-use App\DTO\File\EntityDTO;
-use App\Entity\File;
-use App\Exception\FileException;
-use App\Repository\FileRepository;
+use FileManagerBundle\Repository\FileRepository;
+use Service\EntityValidatorService;
 use Doctrine\ORM\EntityManagerInterface;
+use FileManagerBundle\Entity\File;
+use FileManagerBundle\DTO\EntityDTO;
+use FileManagerBundle\Exception\FileException;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\FilesystemOperator;
 use Psr\Log\LoggerInterface;

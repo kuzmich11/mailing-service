@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exception;
+namespace FileManagerBundle\Exception;
 
 /**
  * Исключение для файлов(вложений)

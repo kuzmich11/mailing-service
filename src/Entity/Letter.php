@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Enum\LetterFormEnum;
 use App\Enum\LetterStatusEnum;
+use FileManagerBundle\Entity\File;
 use App\Repository\LetterRepository;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;

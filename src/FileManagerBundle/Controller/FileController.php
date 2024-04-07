@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Controller;
+namespace FileManagerBundle\Controller;
 
-use App\DTO\File\EntityDTO;
-use App\Exception\FileException;
+use FileManagerBundle\Service\FileService;
+use FileManagerBundle\DTO\EntityDTO;
+use FileManagerBundle\Exception\FileException;
 use JsonRpcBundle\JsonRpcController;
-use App\Service\FileService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

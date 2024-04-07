@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTO\File;
+namespace FileManagerBundle\DTO;
 
 use Spatie\DataTransferObject\DataTransferObject;
 
