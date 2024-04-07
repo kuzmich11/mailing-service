@@ -8,6 +8,7 @@ use App\DTO\Template\ListDTO;
 use App\Entity\Template;
 use App\Enum\FilterTypeEnum;
 use App\Exception\TemplateException;
+use JsonRpcBundle\JsonRpcController;
 use App\Service\TemplateService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;

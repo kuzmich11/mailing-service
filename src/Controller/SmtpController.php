@@ -2,12 +2,12 @@
 
 namespace App\Controller;
 
+use App\DTO\Smtp\EntityDTO;
 use App\DTO\Smtp\HistoryDTO;
 use App\DTO\Smtp\ListDTO;
-use App\DTO\Smtp\EntityDTO;
 use App\Enum\FilterTypeEnum;
-use App\Exception\GroupException;
 use App\Exception\SmtpException;
+use JsonRpcBundle\JsonRpcController;
 use App\Service\NormalizerService;
 use App\Service\SmtpService;
 use Psr\Log\LoggerInterface;

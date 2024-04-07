@@ -1,0 +1,56 @@
+framework:
+    messenger:
+        transports:
+            async.priority:
+                dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
+                options:
+                    vhost: /mail
+                    exchange:
+                        name: async.priority
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
+                    queues:
+                        priority: ~
+            async.regular:
+                dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
+                options:
+                    vhost: /mail
+                    exchange:
+                        name: async.regular
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
+                    queues:
+                        regular: ~
+            async.broadcast:
+                dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
+                options:
+                    vhost: /mail
+                    exchange:
+                        name: async.broadcast
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
+                    queues:
+                        broadcast: ~
+            async.results:
+                dsn: "%env(MESSENGER_TRANSPORT_DSN)%"
+                options:
+                    vhost: /mail
+                    exchange:
+                        name: async.results
+                        type: !php/const AMQP_EX_TYPE_DIRECT
+                        flags: !php/const AMQP_DURABLE
+                    queues:
+                        results: ~
+
+        routing:
+            'App\Message\Message': [ async.priority, async.regular ]
+            'App\Message\BroadcastMessage': [ async.broadcast ]
+            'App\Message\ResultMessage': [ async.results ]
+
+# when@test:
+#    framework:
+#        messenger:
+#            transports:
+#                # replace with your transport name here (e.g., my_transport: 'in-memory://')
+#                # For more Messenger testing tools, see https://github.com/zenstruck/messenger-test
+#                async: 'in-memory://'

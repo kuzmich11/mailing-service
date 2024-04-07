@@ -2,14 +2,14 @@
 
 namespace App\Controller;
 
+use App\DTO\Group\EntityDTO;
 use App\DTO\Group\HistoryDTO;
 use App\DTO\Group\ListDTO;
-use App\DTO\Group\EntityDTO;
 use App\Enum\FilterTypeEnum;
 use App\Exception\GroupException;
-use App\Exception\RecipientException;
-use App\Service\NormalizerService;
+use JsonRpcBundle\JsonRpcController;
 use App\Service\GroupService;
+use App\Service\NormalizerService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
